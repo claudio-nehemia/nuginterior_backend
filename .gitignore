@@ -1,0 +1,158 @@
+# =========================
+# BINARY
+# =========================
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# =========================
+# GO
+# =========================
+vendor/
+go.work
+go.work.sum
+
+# Coverage
+coverage.out
+coverage.html
+
+# Profiling
+*.prof
+
+# =========================
+# ENV
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# LOGS
+# =========================
+*.log
+logs/
+tmp/
+
+# =========================
+# AIR HOT RELOAD
+# =========================
+.air
+tmp/
+dist/
+
+# =========================
+# SWAGGER
+# =========================
+docs/docs.go
+docs/swagger.json
+docs/swagger.yaml
+
+# =========================
+# IDE
+# =========================
+
+# VSCode
+.vscode/
+
+# JetBrains
+.idea/
+
+# Sublime
+*.sublime-project
+*.sublime-workspace
+
+# =========================
+# OS
+# =========================
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# =========================
+# CACHE
+# =========================
+.cache/
+*.cache
+
+# =========================
+# DATABASE
+# =========================
+*.db
+*.sqlite
+*.sqlite3
+
+# =========================
+# TESTING
+# =========================
+/mock/
+coverage/
+testdata/
+
+# =========================
+# GENERATED FILES
+# =========================
+*.generated.go
+mock_*.go
+
+# =========================
+# NODE (kalau ada frontend)
+# =========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# =========================
+# BUILD
+# =========================
+build/
+dist/
+bin/
+
+# =========================
+# DOCKER
+# =========================
+.docker/
+
+# =========================
+# TEMP FILES
+# =========================
+*.tmp
+*.temp
+
+# =========================
+# SECRET FILES
+# =========================
+secret/
+secrets/
+private/
+*.pem
+*.key
+*.crt
+
+# =========================
+# MIGRATE
+# =========================
+migrate
+migrate.exe
+
+# =========================
+# MISC
+# =========================
+*.bak
+*.swp
+*.old
+
+# =========================
+# UPLOADS / USER MEDIA
+# =========================
+uploads/

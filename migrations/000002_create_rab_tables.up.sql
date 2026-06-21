@@ -1,0 +1,59 @@
+CREATE TABLE IF NOT EXISTS rabs (
+    id SERIAL PRIMARY KEY,
+    input_item_id INT NOT NULL UNIQUE REFERENCES input_items(id) ON DELETE CASCADE,
+    order_id INT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    markup_general DECIMAL(5,2) DEFAULT 0.00,
+    grand_total DECIMAL(18,2) DEFAULT 0.00,
+    status VARCHAR(50) DEFAULT 'draft', -- 'draft', 'submitted'
+    submitted_at TIMESTAMP WITH TIME ZONE NULL,
+    submitted_by VARCHAR(100) NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    deleted_at TIMESTAMP WITH TIME ZONE NULL
+);
+
+CREATE TABLE IF NOT EXISTS rab_rooms (
+    id SERIAL PRIMARY KEY,
+    rab_id INT NOT NULL REFERENCES rabs(id) ON DELETE CASCADE,
+    nama_ruangan VARCHAR(255) NOT NULL,
+    produk_id INT NULL REFERENCES produks(id) ON DELETE SET NULL,
+    qty INT NOT NULL DEFAULT 1,
+    panjang DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    lebar DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    tinggi DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    markup DECIMAL(5,2) DEFAULT 0.00,
+    harga_dasar DECIMAL(18,2) DEFAULT 0.00,
+    harga_satuan DECIMAL(18,2) DEFAULT 0.00,
+    harga_total DECIMAL(18,2) DEFAULT 0.00,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS rab_room_bahan_bakus (
+    id SERIAL PRIMARY KEY,
+    rab_room_id INT NOT NULL REFERENCES rab_rooms(id) ON DELETE CASCADE,
+    bahan_baku_id INT NOT NULL REFERENCES bahan_bakus(id) ON DELETE CASCADE,
+    harga_dasar DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+    harga_jasa DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS rab_room_finishings (
+    id SERIAL PRIMARY KEY,
+    rab_room_id INT NOT NULL REFERENCES rab_rooms(id) ON DELETE CASCADE,
+    item_id INT NOT NULL REFERENCES items(id) ON DELETE CASCADE,
+    type VARCHAR(50) NOT NULL, -- 'dalam' atau 'luar'
+    harga DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS rab_room_aksesoris (
+    id SERIAL PRIMARY KEY,
+    rab_room_id INT NOT NULL REFERENCES rab_rooms(id) ON DELETE CASCADE,
+    item_id INT NOT NULL REFERENCES items(id) ON DELETE CASCADE,
+    qty INT NOT NULL DEFAULT 1,
+    harga DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+    markup DECIMAL(5,2) DEFAULT 0.00,
+    harga_total DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
