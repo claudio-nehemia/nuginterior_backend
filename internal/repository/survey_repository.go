@@ -107,7 +107,22 @@ func (r *surveyRepository) Create(ctx context.Context, survey *entity.Survey) er
 }
 
 func (r *surveyRepository) Update(ctx context.Context, survey *entity.Survey) error {
-	return r.db.WithContext(ctx).Save(survey).Error
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Save(survey).Error; err != nil {
+			return err
+		}
+
+		var tglStr string
+		if survey.TanggalSurvey != nil {
+			tglStr = survey.TanggalSurvey.Format("2006-01-02")
+		}
+
+		if err := tx.Model(&entity.Order{}).Where("id = ?", survey.OrderID).Update("tanggal_survey", tglStr).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
 }
 
 func (r *surveyRepository) Delete(ctx context.Context, id uint) error {

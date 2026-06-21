@@ -102,7 +102,25 @@ func (r *orderRepository) Create(ctx context.Context, order *entity.Order) error
 }
 
 func (r *orderRepository) Update(ctx context.Context, order *entity.Order) error {
-	return r.db.WithContext(ctx).Save(order).Error
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Save(order).Error; err != nil {
+			return err
+		}
+
+		var tanggal *time.Time
+		if order.TanggalSurvey != "" {
+			t, err := time.Parse("2006-01-02", order.TanggalSurvey)
+			if err == nil {
+				tanggal = &t
+			}
+		}
+
+		if err := tx.Model(&entity.Survey{}).Where("order_id = ?", order.ID).Update("tanggal_survey", tanggal).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
 }
 
 func (r *orderRepository) Delete(ctx context.Context, id uint) error {

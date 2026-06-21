@@ -92,6 +92,7 @@ func (s *orderService) Create(ctx context.Context, req dto.CreateOrderRequest) (
 		Catatan:                req.Catatan,
 		ProjectStatus:          "pending",
 		TahapanProyek:          "survey",
+		TanggalSurvey:          req.TanggalSurvey,
 	}
 
 	if req.TanggalMasukCustomer != "" {
@@ -127,6 +128,7 @@ func (s *orderService) Update(ctx context.Context, id uint, req dto.UpdateOrderR
 	order.NomorUnit = req.NomorUnit
 	order.Alamat = req.Alamat
 	order.Catatan = req.Catatan
+	order.TanggalSurvey = req.TanggalSurvey
 
 	if req.ProjectStatus != "" {
 		order.ProjectStatus = req.ProjectStatus
