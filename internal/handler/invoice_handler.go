@@ -152,3 +152,19 @@ func (h *InvoiceHandler) ExportPDF(c *gin.Context) {
 	c.Header("Content-Disposition", "inline; filename="+filename)
 	c.Data(http.StatusOK, "application/pdf", pdfBytes)
 }
+
+// POST /api/invoices/contract/:contractId/generate
+func (h *InvoiceHandler) Generate(c *gin.Context) {
+	contractID, err := helper.ParseIDParam(c, "contractId")
+	if err != nil {
+		helper.BadRequest(c, "Contract ID tidak valid", nil)
+		return
+	}
+
+	err = h.svc.GenerateInvoicesForContract(c.Request.Context(), contractID)
+	if err != nil {
+		helper.InternalError(c, "Gagal menerbitkan invoice: "+err.Error())
+		return
+	}
+	helper.OK(c, "Berhasil menerbitkan seluruh invoice termin kontrak", nil)
+}

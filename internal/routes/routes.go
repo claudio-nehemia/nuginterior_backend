@@ -294,6 +294,7 @@ func Register(router *gin.Engine, services *service.Services, cfg *config.Config
 			invoices.GET("", middleware.RequirePermission(services.Auth, constants.PermInvoiceIndex), handlers.Invoice.Index)
 			invoices.GET("/contract/:contractId", middleware.RequirePermission(services.Auth, constants.PermInvoiceShow), handlers.Invoice.Show)
 			invoices.POST("/contract/:contractId/response", middleware.RequirePermission(services.Auth, constants.PermInvoiceResponse), handlers.Invoice.Response)
+			invoices.POST("/contract/:contractId/generate", middleware.RequirePermission(services.Auth, constants.PermInvoiceCreate), handlers.Invoice.Generate)
 			invoices.PUT("/:id/deadline", middleware.RequirePermission(services.Auth, constants.PermInvoiceUpdateDeadline), handlers.Invoice.UpdateDeadline)
 			invoices.POST("/:id/payment", middleware.RequirePermission(services.Auth, constants.PermInvoiceUploadProof), handlers.Invoice.UploadPayment)
 			invoices.GET("/:id/pdf", middleware.RequirePermission(services.Auth, constants.PermInvoiceDownload), handlers.Invoice.ExportPDF)

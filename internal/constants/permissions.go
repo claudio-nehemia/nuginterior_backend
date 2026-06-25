@@ -114,6 +114,7 @@ const (
 	// Invoice permissions
 	PermInvoiceIndex          = "invoice.index"
 	PermInvoiceShow           = "invoice.show"
+	PermInvoiceCreate         = "invoice.create"
 	PermInvoiceDownload       = "invoice.download"
 	PermInvoiceUploadProof    = "invoice.upload_proof"
 	PermInvoiceUpdateDeadline = "invoice.update_deadline"
@@ -251,6 +252,7 @@ func AllPermissions() []PermissionDef {
 		// Invoice
 		{Name: PermInvoiceIndex, DisplayName: "Lihat Invoice List", Group: "Invoice"},
 		{Name: PermInvoiceShow, DisplayName: "Lihat Invoice Detail", Group: "Invoice"},
+		{Name: PermInvoiceCreate, DisplayName: "Buat/Terbitkan Invoice", Group: "Invoice"},
 		{Name: PermInvoiceDownload, DisplayName: "Download PDF Invoice", Group: "Invoice"},
 		{Name: PermInvoiceUploadProof, DisplayName: "Upload Bukti Pembayaran", Group: "Invoice"},
 		{Name: PermInvoiceUpdateDeadline, DisplayName: "Update Deadline Invoice", Group: "Invoice"},

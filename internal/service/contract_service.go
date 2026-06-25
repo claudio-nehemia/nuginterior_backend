@@ -137,9 +137,9 @@ func (s *contractService) CreateContract(ctx context.Context, req dto.CreateCont
 	err = s.db.WithContext(ctx).Where("rab_id = ?", req.RABID).First(&contract).Error
 	exists := err == nil
 
-	// Check setting response_enabled
+	// Check setting workflow_rab_approval_required
 	var settingVal string
-	if err := s.db.WithContext(ctx).Model(&entity.Setting{}).Where("key = ?", "response_enabled").Pluck("value", &settingVal).Error; err == nil {
+	if err := s.db.WithContext(ctx).Model(&entity.Setting{}).Where("key = ?", "workflow_rab_approval_required").Pluck("value", &settingVal).Error; err == nil {
 		if settingVal == "true" {
 			if !exists || contract.ResponseTime == nil {
 				return nil, errors.New("kontrak wajib merespons regular terlebih dahulu sebelum digenerate")

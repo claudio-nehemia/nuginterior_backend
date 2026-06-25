@@ -27,6 +27,7 @@ type InvoiceService interface {
 	UpdateDeadline(ctx context.Context, id uint, deadlineStr string) (*dto.InvoiceResponse, error)
 	UploadPaymentProof(ctx context.Context, id uint, fileHeader *multipart.FileHeader) (*dto.InvoiceResponse, error)
 	GenerateInvoicePDF(ctx context.Context, id uint) ([]byte, string, error) // Returns PDF bytes, filename, error
+	GenerateInvoicesForContract(ctx context.Context, contractID uint) error
 }
 
 type invoiceService struct {
@@ -67,8 +68,15 @@ func (s *invoiceService) GetContractInvoiceList(ctx context.Context) ([]dto.Cont
 
 	var res []dto.ContractInvoiceListResponse
 	for _, c := range contracts {
+		// Check setting finance_auto_invoice
+		var autoInvoice bool = true
+		var settingVal string
+		if err := s.db.WithContext(ctx).Model(&entity.Setting{}).Where("key = ?", "finance_auto_invoice").Pluck("value", &settingVal).Error; err == nil {
+			autoInvoice = (settingVal == "true")
+		}
+
 		// Auto-generate invoices if contract has deal status but no invoices generated yet
-		if len(c.Invoices) == 0 && c.Termin != nil {
+		if autoInvoice && len(c.Invoices) == 0 && c.Termin != nil {
 			var rab entity.RAB
 			if err := s.db.WithContext(ctx).First(&rab, c.RABID).Error; err == nil {
 				for _, step := range c.Termin.Tahapan {
@@ -188,8 +196,15 @@ func (s *invoiceService) GetInvoicesByContractID(ctx context.Context, contractID
 	}
 	c.Invoices = invoices
 
+	// Check setting finance_auto_invoice
+	var autoInvoice bool = true
+	var settingVal string
+	if err := s.db.WithContext(ctx).Model(&entity.Setting{}).Where("key = ?", "finance_auto_invoice").Pluck("value", &settingVal).Error; err == nil {
+		autoInvoice = (settingVal == "true")
+	}
+
 	// Auto-generate invoices if deal but empty invoices
-	if len(c.Invoices) == 0 && c.Termin != nil {
+	if autoInvoice && len(c.Invoices) == 0 && c.Termin != nil {
 		var rab entity.RAB
 		if err := s.db.WithContext(ctx).First(&rab, c.RABID).Error; err == nil {
 			for _, step := range c.Termin.Tahapan {
@@ -585,8 +600,27 @@ func (s *invoiceService) GenerateInvoicePDF(ctx context.Context, id uint) ([]byt
 	pdf.CellFormat(25, 7, fmt.Sprintf("%.1f%%", inv.Persentase), "1", 0, "C", false, 0, "")
 	pdf.CellFormat(35, 7, fmt.Sprintf("Rp %s ", formatRupiah(inv.Amount)), "1", 1, "R", false, 0, "")
 
-	// Total Row
+	var taxEnabled bool
+	var settingVal string
+	if err := s.db.WithContext(ctx).Model(&entity.Setting{}).Where("key = ?", "finance_tax_enabled").Pluck("value", &settingVal).Error; err == nil {
+		taxEnabled = (settingVal == "true")
+	}
+
 	pdf.SetFont("Arial", "B", 9)
+	if taxEnabled {
+		dpp := inv.Amount / 1.11
+		tax := inv.Amount - dpp
+
+		// DPP Row
+		pdf.CellFormat(135, 6, "Dasar Pengenaan Pajak (DPP) ", "1", 0, "R", false, 0, "")
+		pdf.CellFormat(35, 6, fmt.Sprintf("Rp %s ", formatRupiah(dpp)), "1", 1, "R", false, 0, "")
+
+		// PPN Row
+		pdf.CellFormat(135, 6, "PPN (11%) ", "1", 0, "R", false, 0, "")
+		pdf.CellFormat(35, 6, fmt.Sprintf("Rp %s ", formatRupiah(tax)), "1", 1, "R", false, 0, "")
+	}
+
+	// Total Row
 	pdf.CellFormat(135, 7, "TOTAL TAGIHAN ", "1", 0, "R", false, 0, "")
 	pdf.CellFormat(35, 7, fmt.Sprintf("Rp %s ", formatRupiah(inv.Amount)), "1", 1, "R", false, 0, "")
 	pdf.Ln(6)
@@ -632,4 +666,47 @@ func (s *invoiceService) GenerateInvoicePDF(ctx context.Context, id uint) ([]byt
 	filename := fmt.Sprintf("Invoice_%s_Step%d_%d.pdf", safeProjName, inv.Step, inv.ID)
 
 	return buf.Bytes(), filename, nil
+}
+
+func (s *invoiceService) GenerateInvoicesForContract(ctx context.Context, contractID uint) error {
+	c, err := s.contractRepo.FindByID(ctx, contractID)
+	if err != nil {
+		return errors.New("kontrak tidak ditemukan")
+	}
+
+	// Check if invoices already exist
+	var count int64
+	if err := s.db.WithContext(ctx).Model(&entity.Invoice{}).Where("contract_id = ?", contractID).Count(&count).Error; err != nil {
+		return err
+	}
+	if count > 0 {
+		return errors.New("tagihan invoice untuk kontrak ini sudah diterbitkan")
+	}
+
+	if c.Termin == nil {
+		return errors.New("termin tipe belum dipilih pada kontrak ini")
+	}
+
+	var rab entity.RAB
+	if err := s.db.WithContext(ctx).First(&rab, c.RABID).Error; err != nil {
+		return errors.New("RAB tidak ditemukan")
+	}
+
+	for _, step := range c.Termin.Tahapan {
+		inv := entity.Invoice{
+			ContractID: c.ID,
+			OrderID:    c.OrderID,
+			Step:       step.Step,
+			Keterangan: step.Text,
+			Persentase: step.Persentase,
+			Amount:     (step.Persentase / 100.0) * rab.GrandTotal,
+			Status:     "belum_bayar",
+		}
+		if err := s.repo.Create(ctx, &inv); err != nil {
+			return err
+		}
+	}
+
+	_ = s.logTaskSvc.RecordTouch(ctx, c.OrderID, "invoice", "Sistem Manual")
+	return nil
 }

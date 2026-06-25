@@ -215,7 +215,17 @@ func (s *rabService) Create(ctx context.Context, req dto.CreateRABRequest) (*dto
 		rab.Rooms = append(rab.Rooms, room)
 	}
 
-	rab.GrandTotal = grandTotal
+	var taxEnabled bool
+	var settingVal string
+	if err := s.db.WithContext(ctx).Model(&entity.Setting{}).Where("key = ?", "finance_tax_enabled").Pluck("value", &settingVal).Error; err == nil {
+		taxEnabled = (settingVal == "true")
+	}
+
+	if taxEnabled {
+		rab.GrandTotal = grandTotal * 1.11
+	} else {
+		rab.GrandTotal = grandTotal
+	}
 
 	if errCreate := s.repo.Create(ctx, rab); errCreate != nil {
 		return nil, errCreate
@@ -348,7 +358,17 @@ func (s *rabService) Update(ctx context.Context, id uint, req dto.UpdateRABReque
 		rab.Rooms = append(rab.Rooms, room)
 	}
 
-	rab.GrandTotal = grandTotal
+	var taxEnabled bool
+	var settingVal string
+	if err := s.db.WithContext(ctx).Model(&entity.Setting{}).Where("key = ?", "finance_tax_enabled").Pluck("value", &settingVal).Error; err == nil {
+		taxEnabled = (settingVal == "true")
+	}
+
+	if taxEnabled {
+		rab.GrandTotal = grandTotal * 1.11
+	} else {
+		rab.GrandTotal = grandTotal
+	}
 
 	if errUpdate := s.repo.Update(ctx, rab); errUpdate != nil {
 		return nil, errUpdate
@@ -1039,6 +1059,28 @@ func (s *rabService) ExportPDF(ctx context.Context, id uint, mode string) ([]byt
 		pdf.CellFormat(colWidthGrandTotal, 6, "Rp "+formatRupiah(roomSubtotal), "1", 1, "R", true, 0, "")
 	}
 
+	var taxEnabled bool
+	var settingVal string
+	if err := s.db.WithContext(ctx).Model(&entity.Setting{}).Where("key = ?", "finance_tax_enabled").Pluck("value", &settingVal).Error; err == nil {
+		taxEnabled = (settingVal == "true")
+	}
+
+	if taxEnabled {
+		subtotal := rData.GrandTotal / 1.11
+		tax := rData.GrandTotal - subtotal
+
+		// Subtotal Row
+		pdf.SetFont("Arial", "B", 9)
+		pdf.SetFillColor(245, 245, 245)
+		pdf.SetTextColor(100, 100, 100)
+		pdf.CellFormat(totalSpanWidth, 6, "SUBTOTAL RAB ", "1", 0, "R", true, 0, "")
+		pdf.CellFormat(colWidthGrandTotal, 6, "Rp "+formatRupiah(subtotal), "1", 1, "R", true, 0, "")
+
+		// Tax Row
+		pdf.CellFormat(totalSpanWidth, 6, "PPN (11%) ", "1", 0, "R", true, 0, "")
+		pdf.CellFormat(colWidthGrandTotal, 6, "Rp "+formatRupiah(tax), "1", 1, "R", true, 0, "")
+	}
+
 	// Grand Total Row
 	pdf.SetFont("Arial", "B", 9)
 	pdf.SetFillColor(230, 242, 242)
@@ -1446,6 +1488,13 @@ func (s *rabService) ExportExcel(ctx context.Context, id uint, mode string) ([]b
 		curRow++
 	}
 
+	// Check setting finance_tax_enabled
+	var taxEnabled bool
+	var settingVal string
+	if err := s.db.WithContext(ctx).Model(&entity.Setting{}).Where("key = ?", "finance_tax_enabled").Pluck("value", &settingVal).Error; err == nil {
+		taxEnabled = (settingVal == "true")
+	}
+
 	// Grand Total Row
 	lastColLetter = colLetter(len(headers))
 	secondToLastColLetter = colLetter(len(headers) - 1)
@@ -1459,12 +1508,40 @@ func (s *rabService) ExportExcel(ctx context.Context, id uint, mode string) ([]b
 		finalFormula = "=0"
 	}
 
-	_ = f.MergeCell(sheetName, fmt.Sprintf("A%d", curRow), fmt.Sprintf("%s%d", secondToLastColLetter, curRow))
-	_ = f.SetCellValue(sheetName, fmt.Sprintf("A%d", curRow), "GRAND TOTAL RAB")
-	_ = f.SetCellStyle(sheetName, fmt.Sprintf("A%d", curRow), fmt.Sprintf("%s%d", secondToLastColLetter, curRow), styleGrandTotal)
+	if taxEnabled {
+		// 1. Subtotal Row
+		_ = f.MergeCell(sheetName, fmt.Sprintf("A%d", curRow), fmt.Sprintf("%s%d", secondToLastColLetter, curRow))
+		_ = f.SetCellValue(sheetName, fmt.Sprintf("A%d", curRow), "SUBTOTAL")
+		_ = f.SetCellStyle(sheetName, fmt.Sprintf("A%d", curRow), fmt.Sprintf("%s%d", secondToLastColLetter, curRow), styleSubtotal)
+		_ = f.SetCellFormula(sheetName, fmt.Sprintf("%s%d", lastColLetter, curRow), finalFormula)
+		_ = f.SetCellStyle(sheetName, fmt.Sprintf("%s%d", lastColLetter, curRow), fmt.Sprintf("%s%d", lastColLetter, curRow), styleSubtotalVal)
 
-	_ = f.SetCellFormula(sheetName, fmt.Sprintf("%s%d", lastColLetter, curRow), finalFormula)
-	_ = f.SetCellStyle(sheetName, fmt.Sprintf("%s%d", lastColLetter, curRow), fmt.Sprintf("%s%d", lastColLetter, curRow), styleGrandTotal)
+		subtotalRow := curRow
+		curRow++
+
+		// 2. PPN 11% Row
+		_ = f.MergeCell(sheetName, fmt.Sprintf("A%d", curRow), fmt.Sprintf("%s%d", secondToLastColLetter, curRow))
+		_ = f.SetCellValue(sheetName, fmt.Sprintf("A%d", curRow), "PPN (11%)")
+		_ = f.SetCellStyle(sheetName, fmt.Sprintf("A%d", curRow), fmt.Sprintf("%s%d", secondToLastColLetter, curRow), styleSubtotal)
+		_ = f.SetCellFormula(sheetName, fmt.Sprintf("%s%d", lastColLetter, curRow), fmt.Sprintf("=%s%d*0.11", lastColLetter, subtotalRow))
+		_ = f.SetCellStyle(sheetName, fmt.Sprintf("%s%d", lastColLetter, curRow), fmt.Sprintf("%s%d", lastColLetter, curRow), styleSubtotalVal)
+
+		taxRow := curRow
+		curRow++
+
+		// 3. Grand Total Row
+		_ = f.MergeCell(sheetName, fmt.Sprintf("A%d", curRow), fmt.Sprintf("%s%d", secondToLastColLetter, curRow))
+		_ = f.SetCellValue(sheetName, fmt.Sprintf("A%d", curRow), "GRAND TOTAL RAB")
+		_ = f.SetCellStyle(sheetName, fmt.Sprintf("A%d", curRow), fmt.Sprintf("%s%d", secondToLastColLetter, curRow), styleGrandTotal)
+		_ = f.SetCellFormula(sheetName, fmt.Sprintf("%s%d", lastColLetter, curRow), fmt.Sprintf("=%s%d+%s%d", lastColLetter, subtotalRow, lastColLetter, taxRow))
+		_ = f.SetCellStyle(sheetName, fmt.Sprintf("%s%d", lastColLetter, curRow), fmt.Sprintf("%s%d", lastColLetter, curRow), styleGrandTotal)
+	} else {
+		_ = f.MergeCell(sheetName, fmt.Sprintf("A%d", curRow), fmt.Sprintf("%s%d", secondToLastColLetter, curRow))
+		_ = f.SetCellValue(sheetName, fmt.Sprintf("A%d", curRow), "GRAND TOTAL RAB")
+		_ = f.SetCellStyle(sheetName, fmt.Sprintf("A%d", curRow), fmt.Sprintf("%s%d", secondToLastColLetter, curRow), styleGrandTotal)
+		_ = f.SetCellFormula(sheetName, fmt.Sprintf("%s%d", lastColLetter, curRow), finalFormula)
+		_ = f.SetCellStyle(sheetName, fmt.Sprintf("%s%d", lastColLetter, curRow), fmt.Sprintf("%s%d", lastColLetter, curRow), styleGrandTotal)
+	}
 
 	// Column Widths set dynamically based on header names
 	for colIdx, header := range headers {
