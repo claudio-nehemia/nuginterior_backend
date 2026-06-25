@@ -13,10 +13,9 @@ RUN go mod download
 # Copy the rest of the code
 COPY . .
 
-# Build the application using Go cache mounts to speed up compilation
+# Build the application using Go build cache mount and sequential build to avoid swap thrashing
 RUN --mount=type=cache,target=/root/.cache/go-build \
-    --mount=type=cache,target=/go/pkg/mod \
-    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /app/api ./cmd/api/main.go
+    GOGC=50 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -p 1 -ldflags="-w -s" -o /app/api ./cmd/api/main.go
 
 # Step 2: Run the binary
 FROM alpine:latest
