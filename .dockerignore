@@ -1,0 +1,12 @@
+.git
+.env
+.env.*
+*.exe
+*.log
+logs/
+tmp/
+vendor/
+.vscode/
+.idea/
+.cache/
+uploads/
