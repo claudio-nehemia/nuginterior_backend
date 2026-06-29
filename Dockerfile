@@ -1,32 +1,12 @@
-# Step 1: Build the Go binary
-FROM golang:1.25-alpine AS builder
-
-# Install git and certificates
-RUN apk update && apk add --no-cache git ca-certificates tzdata
-
-WORKDIR /app
-
-# Copy dependency files
-COPY go.mod go.sum ./
-RUN go mod download
-
-# Copy the rest of the code
-COPY . .
-
-# Build the application using Go build cache mount and sequential build to avoid swap thrashing
-RUN --mount=type=cache,target=/root/.cache/go-build \
-    GOGC=50 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -p 1 -ldflags="-w -s" -o /app/api ./cmd/api/main.go
-
-# Step 2: Run the binary
 FROM alpine:latest
 
 RUN apk --no-cache add ca-certificates tzdata
 
 WORKDIR /app
 
-# Copy the binary and migrations from builder
-COPY --from=builder /app/api .
-COPY --from=builder /app/migrations ./migrations
+# Copy the pre-built Linux binary and migrations
+COPY api .
+COPY migrations ./migrations
 
 # Expose port
 EXPOSE 8080
