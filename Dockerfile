@@ -6,6 +6,7 @@ WORKDIR /app
 
 # Copy the pre-built Linux binary and migrations
 COPY api .
+RUN chmod +x api
 COPY migrations ./migrations
 
 # Expose port
