@@ -33,6 +33,10 @@ func main() {
 		os.Setenv("DB_PORT", "5433")
 		fmt.Println("[Config] Redirecting DB_PORT to 5433 for host execution")
 	}
+	if os.Getenv("DB_PASS") == "" && os.Getenv("DB_PASSWORD") != "" {
+		os.Setenv("DB_PASS", os.Getenv("DB_PASSWORD"))
+		fmt.Println("[Config] Mapping DB_PASSWORD to DB_PASS for host execution")
+	}
 
 	cfg, err := config.Load()
 	if err != nil {
