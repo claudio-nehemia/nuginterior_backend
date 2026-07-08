@@ -36,6 +36,7 @@ type desainFinalService struct {
 	logger        *zap.Logger
 	uploadDir     string
 	logTaskSvc    ProjectLogTaskService
+	db            *gorm.DB
 }
 
 func NewDesainFinalService(
@@ -45,6 +46,7 @@ func NewDesainFinalService(
 	logger *zap.Logger,
 	uploadDir string,
 	logTaskSvc ProjectLogTaskService,
+	db *gorm.DB,
 ) DesainFinalService {
 	return &desainFinalService{
 		repo:          repo,
@@ -53,10 +55,17 @@ func NewDesainFinalService(
 		logger:        logger,
 		uploadDir:     uploadDir,
 		logTaskSvc:    logTaskSvc,
+		db:            db,
 	}
 }
 
 func (s *desainFinalService) checkCommitmentFee(ctx context.Context, orderID uint) error {
+	var responseEnabled string
+	s.db.WithContext(ctx).Model(&entity.Setting{}).Where("key = ?", "response_enabled").Pluck("value", &responseEnabled)
+	if responseEnabled == "false" {
+		return nil
+	}
+
 	m, err := s.moodboardRepo.FindByOrderID(ctx, orderID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

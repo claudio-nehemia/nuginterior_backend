@@ -68,7 +68,7 @@ func NewServices(deps Dependencies) *Services {
 		Survey:          NewSurveyService(repos.Survey, deps.Logger, projectLogTaskSvc, notificationSvc),
 		Moodboard:       NewMoodboardService(repos.Moodboard, deps.DB, deps.Cache, deps.Logger, deps.Config.UploadDir, projectLogTaskSvc),
 		Setting:         settingSvc,
-		DesainFinal:     NewDesainFinalService(repos.DesainFinal, repos.Moodboard, deps.Cache, deps.Logger, deps.Config.UploadDir, projectLogTaskSvc),
+		DesainFinal:     NewDesainFinalService(repos.DesainFinal, repos.Moodboard, deps.Cache, deps.Logger, deps.Config.UploadDir, projectLogTaskSvc, deps.DB),
 		InputItem:       NewInputItemService(repos.InputItem, deps.Logger, projectLogTaskSvc),
 		RAB:             NewRABService(repos.RAB, repos.InputItem, deps.DB, deps.Logger, deps.Config.UploadDir, projectLogTaskSvc),
 		Contract:        NewContractService(repos.Contract, repos.RAB, repos.Termin, repos.User, deps.DB, deps.Logger, deps.Config.UploadDir, projectLogTaskSvc),

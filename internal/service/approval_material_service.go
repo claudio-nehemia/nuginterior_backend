@@ -57,7 +57,8 @@ func (s *approvalMaterialService) checkGambarKerjaApproved(ctx context.Context, 
 		return err
 	}
 
-	if gk.Status != "approved" {
+	isEnabled, _ := s.settingSvc.IsEnabled(ctx, "response_enabled")
+	if isEnabled && gk.Status != "approved" {
 		return errors.New("approval material terkunci! Status gambar kerja belum disetujui")
 	}
 
@@ -65,12 +66,21 @@ func (s *approvalMaterialService) checkGambarKerjaApproved(ctx context.Context, 
 }
 
 func (s *approvalMaterialService) GetAll(ctx context.Context) ([]dto.ApprovalMaterialResponse, error) {
-	// Query orders that have an approved GambarKerja
+	isEnabled, _ := s.settingSvc.IsEnabled(ctx, "response_enabled")
 	var eligibleOrders []entity.Order
-	err := s.db.WithContext(ctx).
-		Joins("JOIN gambar_kerja gk ON gk.order_id = orders.id").
-		Where("gk.status = ?", "approved").
-		Find(&eligibleOrders).Error
+	var err error
+
+	if isEnabled {
+		err = s.db.WithContext(ctx).
+			Joins("JOIN gambar_kerja gk ON gk.order_id = orders.id").
+			Where("gk.status = ?", "approved").
+			Find(&eligibleOrders).Error
+	} else {
+		err = s.db.WithContext(ctx).
+			Joins("JOIN gambar_kerja gk ON gk.order_id = orders.id").
+			Find(&eligibleOrders).Error
+	}
+
 	if err != nil {
 		return nil, err
 	}
