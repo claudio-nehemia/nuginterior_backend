@@ -74,6 +74,10 @@ func (r *orderRepository) FindByID(ctx context.Context, id uint) (*entity.Order,
 
 func (r *orderRepository) Create(ctx context.Context, order *entity.Order) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		companyID := database.GetContextCompanyID(ctx)
+		if order.CompanyID == 0 && companyID > 0 {
+			order.CompanyID = companyID
+		}
 		if err := tx.Create(order).Error; err != nil {
 			return err
 		}

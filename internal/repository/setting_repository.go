@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 
-	"github.com/claudio-nehemia/interior_backend/internal/constants"
 	"github.com/claudio-nehemia/interior_backend/internal/database"
 	"github.com/claudio-nehemia/interior_backend/internal/entity"
 	"go.uber.org/zap"
@@ -46,7 +45,7 @@ func (r *settingRepository) FindByKey(ctx context.Context, key string) (*entity.
 }
 
 func (r *settingRepository) Upsert(ctx context.Context, setting *entity.Setting) error {
-	companyID, _ := ctx.Value(constants.ContextKeyCompanyID).(uint)
+	companyID := database.GetContextCompanyID(ctx)
 	if companyID == 0 {
 		companyID = 1
 	}

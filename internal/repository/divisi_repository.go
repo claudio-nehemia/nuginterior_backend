@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 
-	"github.com/claudio-nehemia/interior_backend/internal/constants"
 	"github.com/claudio-nehemia/interior_backend/internal/database"
 	"github.com/claudio-nehemia/interior_backend/internal/entity"
 	"go.uber.org/zap"
@@ -48,7 +47,7 @@ func (r *divisiRepository) FindByID(ctx context.Context, id uint) (*entity.Divis
 }
 
 func (r *divisiRepository) Create(ctx context.Context, divisi *entity.Divisi) error {
-	companyID, _ := ctx.Value(constants.ContextKeyCompanyID).(uint)
+	companyID := database.GetContextCompanyID(ctx)
 	if companyID == 0 {
 		companyID = 1
 	}

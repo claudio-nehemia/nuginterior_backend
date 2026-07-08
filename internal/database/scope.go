@@ -69,3 +69,29 @@ func OrderScope(ctx context.Context) func(db *gorm.DB) *gorm.DB {
 	}
 }
 
+// GetContextCompanyID returns the target company_id for creation/updates based on context.
+// It respects the active filter company_id if the user is a Super Admin of Company 1.
+func GetContextCompanyID(ctx context.Context) uint {
+	if ctx == nil {
+		return 0
+	}
+
+	companyID, ok := ctx.Value(constants.ContextKeyCompanyID).(uint)
+	if !ok {
+		return 0
+	}
+
+	role, _ := ctx.Value(constants.ContextKeyUserRole).(string)
+
+	// If Super Admin of Company 1, check if they are filtering a specific company
+	if companyID == 1 && role == "Super Admin" {
+		if filterVal := ctx.Value(constants.ContextKeyFilterCompanyID); filterVal != nil {
+			if filterID, ok := filterVal.(uint); ok && filterID > 0 {
+				return filterID
+			}
+		}
+	}
+
+	return companyID
+}
+
