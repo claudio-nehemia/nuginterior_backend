@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/claudio-nehemia/interior_backend/internal/constants"
 	"github.com/claudio-nehemia/interior_backend/internal/database"
 	"github.com/claudio-nehemia/interior_backend/internal/entity"
 	"go.uber.org/zap"
@@ -60,6 +61,10 @@ func (r *userRepository) FindByID(ctx context.Context, id uint) (*entity.User, e
 }
 
 func (r *userRepository) Create(ctx context.Context, user *entity.User) error {
+	companyID, _ := ctx.Value(constants.ContextKeyCompanyID).(uint)
+	if user.CompanyID == 0 && companyID > 0 {
+		user.CompanyID = companyID
+	}
 	return r.db.WithContext(ctx).Create(user).Error
 }
 
