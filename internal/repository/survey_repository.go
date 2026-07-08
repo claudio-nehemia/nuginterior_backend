@@ -20,7 +20,7 @@ type SurveyRepository interface {
 	SyncPengukuran(ctx context.Context, surveyID uint, items []entity.SurveyPengukuran) error
 	FindUsersByIDs(ctx context.Context, ids []uint) ([]entity.User, error)
 	UpdateOrderStage(ctx context.Context, orderID uint, stage string) error
-	IsMarketingResponseEnabled(ctx context.Context) (bool, error)
+	IsMarketingResponseEnabled(ctx context.Context, companyID uint) (bool, error)
 }
 
 type surveyRepository struct {
@@ -160,9 +160,9 @@ func (r *surveyRepository) UpdateOrderStage(ctx context.Context, orderID uint, s
 	return r.db.WithContext(ctx).Model(&entity.Order{}).Where("id = ?", orderID).Update("tahapan_proyek", stage).Error
 }
 
-func (r *surveyRepository) IsMarketingResponseEnabled(ctx context.Context) (bool, error) {
+func (r *surveyRepository) IsMarketingResponseEnabled(ctx context.Context, companyID uint) (bool, error) {
 	var val string
-	err := r.db.WithContext(ctx).Scopes(database.CompanyScope(ctx)).Model(&entity.Setting{}).Where("key = ?", "marketing_response_enabled").Pluck("value", &val).Error
+	err := r.db.WithContext(ctx).Model(&entity.Setting{}).Where("company_id = ? AND key = ?", companyID, "marketing_response_enabled").Pluck("value", &val).Error
 	if err != nil {
 		return true, err
 	}

@@ -73,8 +73,19 @@ func (s *desainFinalService) checkCommitmentFee(ctx context.Context, orderID uin
 		return errors.New("desain final terkunci! Selesaikan pembayaran commitment fee terlebih dahulu")
 	}
 
+	// Resolve target company ID from the order
+	companyID := uint(1)
+	if m.Order != nil {
+		companyID = m.Order.CompanyID
+	} else {
+		companyID = database.GetContextCompanyID(ctx)
+		if companyID == 0 {
+			companyID = 1
+		}
+	}
+
 	var responseEnabled string
-	s.db.WithContext(ctx).Scopes(database.CompanyScope(ctx)).Model(&entity.Setting{}).Where("key = ?", "response_enabled").Pluck("value", &responseEnabled)
+	s.db.WithContext(ctx).Model(&entity.Setting{}).Where("company_id = ? AND key = ?", companyID, "response_enabled").Pluck("value", &responseEnabled)
 	if responseEnabled != "false" {
 		if m.CommitmentFee.ResponseTime == nil {
 			return errors.New("desain final terkunci! Klien wajib merespons commitment fee terlebih dahulu")

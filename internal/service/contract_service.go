@@ -138,13 +138,24 @@ func (s *contractService) CreateContract(ctx context.Context, req dto.CreateCont
 	err = s.db.WithContext(ctx).Where("rab_id = ?", req.RABID).First(&contract).Error
 	exists := err == nil
 
+	// Resolve target company ID from the order
+	companyID := uint(1)
+	if rab.Order != nil {
+		companyID = rab.Order.CompanyID
+	} else {
+		companyID = database.GetContextCompanyID(ctx)
+		if companyID == 0 {
+			companyID = 1
+		}
+	}
+
 	// Check setting workflow_rab_approval_required
 	var settingVal string
-	if err := s.db.WithContext(ctx).Scopes(database.CompanyScope(ctx)).Model(&entity.Setting{}).Where("key = ?", "workflow_rab_approval_required").Pluck("value", &settingVal).Error; err == nil {
+	if err := s.db.WithContext(ctx).Model(&entity.Setting{}).Where("company_id = ? AND key = ?", companyID, "workflow_rab_approval_required").Pluck("value", &settingVal).Error; err == nil {
 		if settingVal == "true" {
 			// Also check if response_enabled is active; if disabled, skip response check
 			var responseEnabled string
-			s.db.WithContext(ctx).Scopes(database.CompanyScope(ctx)).Model(&entity.Setting{}).Where("key = ?", "response_enabled").Pluck("value", &responseEnabled)
+			s.db.WithContext(ctx).Model(&entity.Setting{}).Where("company_id = ? AND key = ?", companyID, "response_enabled").Pluck("value", &responseEnabled)
 			if responseEnabled != "false" {
 				if !exists || contract.ResponseTime == nil {
 					return nil, errors.New("kontrak wajib merespons regular terlebih dahulu sebelum digenerate")

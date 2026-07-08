@@ -245,8 +245,12 @@ func (s *surveyService) Response(ctx context.Context, id uint, userName string) 
 	if err := s.repo.Update(ctx, survey); err != nil {
 		return nil, err
 	}
+	companyID := uint(1)
+	if survey.Order != nil {
+		companyID = survey.Order.CompanyID
+	}
 	// Transition to moodboard if marketing response is disabled
-	if enabled, errSetting := s.repo.IsMarketingResponseEnabled(ctx); errSetting == nil && !enabled {
+	if enabled, errSetting := s.repo.IsMarketingResponseEnabled(ctx, companyID); errSetting == nil && !enabled {
 		if errStage := s.logTaskSvc.TransitionStage(ctx, survey.OrderID, "moodboard", userName); errStage != nil {
 			s.logger.Error("Failed to update order stage to moodboard", zap.Error(errStage))
 		}

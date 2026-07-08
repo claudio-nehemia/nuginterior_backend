@@ -69,10 +69,21 @@ func (s *invoiceService) GetContractInvoiceList(ctx context.Context) ([]dto.Cont
 
 	var res []dto.ContractInvoiceListResponse
 	for _, c := range contracts {
+		// Resolve target company ID from the contract
+		companyID := uint(1)
+		if c.Order != nil {
+			companyID = c.Order.CompanyID
+		} else {
+			companyID = database.GetContextCompanyID(ctx)
+			if companyID == 0 {
+				companyID = 1
+			}
+		}
+
 		// Check setting finance_auto_invoice
 		var autoInvoice bool = true
 		var settingVal string
-		if err := s.db.WithContext(ctx).Scopes(database.CompanyScope(ctx)).Model(&entity.Setting{}).Where("key = ?", "finance_auto_invoice").Pluck("value", &settingVal).Error; err == nil {
+		if err := s.db.WithContext(ctx).Model(&entity.Setting{}).Where("company_id = ? AND key = ?", companyID, "finance_auto_invoice").Pluck("value", &settingVal).Error; err == nil {
 			autoInvoice = (settingVal == "true")
 		}
 
@@ -197,10 +208,21 @@ func (s *invoiceService) GetInvoicesByContractID(ctx context.Context, contractID
 	}
 	c.Invoices = invoices
 
+	// Resolve target company ID from the contract
+	companyID := uint(1)
+	if c.Order != nil {
+		companyID = c.Order.CompanyID
+	} else {
+		companyID = database.GetContextCompanyID(ctx)
+		if companyID == 0 {
+			companyID = 1
+		}
+	}
+
 	// Check setting finance_auto_invoice
 	var autoInvoice bool = true
 	var settingVal string
-	if err := s.db.WithContext(ctx).Scopes(database.CompanyScope(ctx)).Model(&entity.Setting{}).Where("key = ?", "finance_auto_invoice").Pluck("value", &settingVal).Error; err == nil {
+	if err := s.db.WithContext(ctx).Model(&entity.Setting{}).Where("company_id = ? AND key = ?", companyID, "finance_auto_invoice").Pluck("value", &settingVal).Error; err == nil {
 		autoInvoice = (settingVal == "true")
 	}
 
@@ -603,7 +625,7 @@ func (s *invoiceService) GenerateInvoicePDF(ctx context.Context, id uint) ([]byt
 
 	var taxEnabled bool
 	var settingVal string
-	if err := s.db.WithContext(ctx).Scopes(database.CompanyScope(ctx)).Model(&entity.Setting{}).Where("key = ?", "finance_tax_enabled").Pluck("value", &settingVal).Error; err == nil {
+	if err := s.db.WithContext(ctx).Model(&entity.Setting{}).Where("company_id = ? AND key = ?", companyID, "finance_tax_enabled").Pluck("value", &settingVal).Error; err == nil {
 		taxEnabled = (settingVal == "true")
 	}
 
