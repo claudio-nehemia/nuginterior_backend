@@ -73,6 +73,10 @@ func (s *authService) Login(ctx context.Context, req dto.LoginRequest) (*dto.Tok
 		return nil, fmt.Errorf("Pendaftaran perusahaan Anda ditolak oleh Super Admin")
 	}
 
+	if company.ExpiredAt != nil && company.ExpiredAt.Before(time.Now()) {
+		return nil, fmt.Errorf("Akun perusahaan Anda telah kedaluwarsa pada %s. Silakan hubungi Super Admin.", company.ExpiredAt.Format("02-01-2006"))
+	}
+
 	return s.generateTokens(user)
 }
 

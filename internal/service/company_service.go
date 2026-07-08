@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/claudio-nehemia/interior_backend/internal/database"
 	"github.com/claudio-nehemia/interior_backend/internal/dto"
@@ -37,7 +38,9 @@ func (s *companyService) GetAll(ctx context.Context) ([]dto.CompanyResponse, err
 
 	res := make([]dto.CompanyResponse, len(companies))
 	for i, c := range companies {
-		res[i] = toCompanyResponse(c)
+		var adminEmail string
+		s.db.WithContext(ctx).Model(&entity.User{}).Where("company_id = ?", c.ID).Order("id asc").Limit(1).Pluck("email", &adminEmail)
+		res[i] = toCompanyResponse(c, adminEmail)
 	}
 	return res, nil
 }
@@ -48,7 +51,9 @@ func (s *companyService) GetByID(ctx context.Context, id uint) (*dto.CompanyResp
 	if err != nil {
 		return nil, err
 	}
-	res := toCompanyResponse(company)
+	var adminEmail string
+	s.db.WithContext(ctx).Model(&entity.User{}).Where("company_id = ?", company.ID).Order("id asc").Limit(1).Pluck("email", &adminEmail)
+	res := toCompanyResponse(company, adminEmail)
 	return &res, nil
 }
 
@@ -70,11 +75,24 @@ func (s *companyService) Update(ctx context.Context, id uint, req dto.CompanyUpd
 	company.Email = req.Email
 	company.Phone = req.Phone
 
+	if req.ExpiredAt != nil && *req.ExpiredAt != "" {
+		t, err := time.Parse("2006-01-02", *req.ExpiredAt)
+		if err != nil {
+			return nil, fmt.Errorf("format tanggal expired_at salah")
+		}
+		company.ExpiredAt = &t
+	} else {
+		company.ExpiredAt = nil
+	}
+
 	if err := s.db.WithContext(ctx).Save(&company).Error; err != nil {
 		return nil, err
 	}
 
-	res := toCompanyResponse(company)
+	var adminEmail string
+	s.db.WithContext(ctx).Model(&entity.User{}).Where("company_id = ?", company.ID).Order("id asc").Limit(1).Pluck("email", &adminEmail)
+
+	res := toCompanyResponse(company, adminEmail)
 	return &res, nil
 }
 
@@ -129,7 +147,7 @@ func (s *companyService) Reject(ctx context.Context, id uint) error {
 	return s.db.WithContext(ctx).Save(&company).Error
 }
 
-func toCompanyResponse(c entity.Company) dto.CompanyResponse {
+func toCompanyResponse(c entity.Company, adminEmail string) dto.CompanyResponse {
 	return dto.CompanyResponse{
 		ID:           c.ID,
 		Name:         c.Name,
@@ -144,6 +162,8 @@ func toCompanyResponse(c entity.Company) dto.CompanyResponse {
 		Email:        c.Email,
 		Phone:        c.Phone,
 		Status:       c.Status,
+		AdminEmail:   adminEmail,
+		ExpiredAt:    c.ExpiredAt,
 		CreatedAt:    c.CreatedAt,
 		UpdatedAt:    c.UpdatedAt,
 	}

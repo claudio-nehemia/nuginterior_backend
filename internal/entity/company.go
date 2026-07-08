@@ -19,6 +19,7 @@ type Company struct {
 	Email        string    `gorm:"size:255" json:"email"`
 	Phone        string    `gorm:"size:50" json:"phone"`
 	Status       string    `gorm:"size:50;not null;default:'pending'" json:"status"` // pending, verified, rejected
+	ExpiredAt    *time.Time `json:"expired_at" gorm:"default:null"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 }
