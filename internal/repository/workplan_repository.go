@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 
+	"github.com/claudio-nehemia/interior_backend/internal/database"
 	"github.com/claudio-nehemia/interior_backend/internal/entity"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -36,6 +37,7 @@ func NewWorkplanRepository(db *gorm.DB, logger *zap.Logger) WorkplanRepository {
 func (r *workplanRepository) FindAll(ctx context.Context) ([]entity.Workplan, error) {
 	var list []entity.Workplan
 	err := r.db.WithContext(ctx).
+		Scopes(database.OrderScope(ctx)).
 		Preload("Order").
 		Preload("Stages.StageMaster").
 		Preload("Stages.InputItemRoom.Produk").
@@ -47,6 +49,7 @@ func (r *workplanRepository) FindAll(ctx context.Context) ([]entity.Workplan, er
 func (r *workplanRepository) FindByID(ctx context.Context, id uint) (*entity.Workplan, error) {
 	var wp entity.Workplan
 	err := r.db.WithContext(ctx).
+		Scopes(database.OrderScope(ctx)).
 		Preload("Order").
 		Preload("Stages.StageMaster").
 		Preload("Stages.InputItemRoom.Produk").
@@ -60,6 +63,7 @@ func (r *workplanRepository) FindByID(ctx context.Context, id uint) (*entity.Wor
 func (r *workplanRepository) FindByOrderID(ctx context.Context, orderID uint) (*entity.Workplan, error) {
 	var wp entity.Workplan
 	err := r.db.WithContext(ctx).
+		Scopes(database.OrderScope(ctx)).
 		Preload("Order").
 		Preload("Stages.StageMaster").
 		Preload("Stages.InputItemRoom.Produk").

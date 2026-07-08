@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/claudio-nehemia/interior_backend/internal/database"
 	"github.com/claudio-nehemia/interior_backend/internal/entity"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -32,6 +33,7 @@ func NewInputItemRepository(db *gorm.DB, logger *zap.Logger) InputItemRepository
 func (r *inputItemRepository) FindAll(ctx context.Context) ([]entity.InputItem, error) {
 	var list []entity.InputItem
 	err := r.db.WithContext(ctx).
+		Scopes(database.OrderScope(ctx)).
 		Preload("Order").
 		Preload("DesainFinal").
 		Preload("Rooms").
@@ -52,6 +54,7 @@ func (r *inputItemRepository) FindAll(ctx context.Context) ([]entity.InputItem, 
 func (r *inputItemRepository) FindByID(ctx context.Context, id uint) (*entity.InputItem, error) {
 	var item entity.InputItem
 	err := r.db.WithContext(ctx).
+		Scopes(database.OrderScope(ctx)).
 		Preload("Order").
 		Preload("DesainFinal").
 		Preload("Rooms").
@@ -74,6 +77,7 @@ func (r *inputItemRepository) FindByID(ctx context.Context, id uint) (*entity.In
 func (r *inputItemRepository) FindByDesainFinalID(ctx context.Context, dfID uint) (*entity.InputItem, error) {
 	var item entity.InputItem
 	err := r.db.WithContext(ctx).
+		Scopes(database.OrderScope(ctx)).
 		Preload("Order").
 		Preload("DesainFinal").
 		Preload("Rooms").

@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 
+	"github.com/claudio-nehemia/interior_backend/internal/database"
 	"github.com/claudio-nehemia/interior_backend/internal/entity"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -33,6 +34,7 @@ func NewApprovalMaterialRepository(db *gorm.DB, logger *zap.Logger) ApprovalMate
 func (r *approvalMaterialRepository) FindAll(ctx context.Context) ([]entity.ApprovalMaterial, error) {
 	var list []entity.ApprovalMaterial
 	err := r.db.WithContext(ctx).
+		Scopes(database.OrderScope(ctx)).
 		Preload("Order").
 		Preload("Items").
 		Order("id ASC").
@@ -43,6 +45,7 @@ func (r *approvalMaterialRepository) FindAll(ctx context.Context) ([]entity.Appr
 func (r *approvalMaterialRepository) FindByID(ctx context.Context, id uint) (*entity.ApprovalMaterial, error) {
 	var am entity.ApprovalMaterial
 	err := r.db.WithContext(ctx).
+		Scopes(database.OrderScope(ctx)).
 		Preload("Order").
 		Preload("Items").
 		First(&am, id).Error
@@ -55,6 +58,7 @@ func (r *approvalMaterialRepository) FindByID(ctx context.Context, id uint) (*en
 func (r *approvalMaterialRepository) FindByOrderID(ctx context.Context, orderID uint) (*entity.ApprovalMaterial, error) {
 	var am entity.ApprovalMaterial
 	err := r.db.WithContext(ctx).
+		Scopes(database.OrderScope(ctx)).
 		Preload("Order").
 		Preload("Items").
 		Where("order_id = ?", orderID).

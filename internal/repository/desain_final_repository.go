@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 
+	"github.com/claudio-nehemia/interior_backend/internal/database"
 	"github.com/claudio-nehemia/interior_backend/internal/entity"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -36,6 +37,7 @@ func NewDesainFinalRepository(db *gorm.DB, logger *zap.Logger) DesainFinalReposi
 func (r *desainFinalRepository) FindAll(ctx context.Context) ([]entity.DesainFinal, error) {
 	var list []entity.DesainFinal
 	err := r.db.WithContext(ctx).
+		Scopes(database.OrderScope(ctx)).
 		Preload("Order").
 		Preload("Files").
 		Order("id ASC").
@@ -46,6 +48,7 @@ func (r *desainFinalRepository) FindAll(ctx context.Context) ([]entity.DesainFin
 func (r *desainFinalRepository) FindByID(ctx context.Context, id uint) (*entity.DesainFinal, error) {
 	var df entity.DesainFinal
 	err := r.db.WithContext(ctx).
+		Scopes(database.OrderScope(ctx)).
 		Preload("Order").
 		Preload("Files").
 		First(&df, id).Error
@@ -58,6 +61,7 @@ func (r *desainFinalRepository) FindByID(ctx context.Context, id uint) (*entity.
 func (r *desainFinalRepository) FindByOrderID(ctx context.Context, orderID uint) (*entity.DesainFinal, error) {
 	var df entity.DesainFinal
 	err := r.db.WithContext(ctx).
+		Scopes(database.OrderScope(ctx)).
 		Preload("Order").
 		Preload("Files").
 		Where("order_id = ?", orderID).

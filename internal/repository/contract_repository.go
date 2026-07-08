@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 
+	"github.com/claudio-nehemia/interior_backend/internal/database"
 	"github.com/claudio-nehemia/interior_backend/internal/entity"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -29,6 +30,7 @@ func NewContractRepository(db *gorm.DB, logger *zap.Logger) ContractRepository {
 func (r *contractRepository) FindAllRABsWithContract(ctx context.Context) ([]entity.RAB, error) {
 	var list []entity.RAB
 	err := r.db.WithContext(ctx).
+		Scopes(database.OrderScope(ctx)).
 		Preload("Order").
 		Preload("Contract").
 		Preload("Contract.Termin").
@@ -41,6 +43,7 @@ func (r *contractRepository) FindAllRABsWithContract(ctx context.Context) ([]ent
 func (r *contractRepository) FindByID(ctx context.Context, id uint) (*entity.Contract, error) {
 	var contract entity.Contract
 	err := r.db.WithContext(ctx).
+		Scopes(database.OrderScope(ctx)).
 		Preload("Order").
 		Preload("Termin").
 		Preload("RAB").
@@ -54,6 +57,7 @@ func (r *contractRepository) FindByID(ctx context.Context, id uint) (*entity.Con
 func (r *contractRepository) FindByRABID(ctx context.Context, rabID uint) (*entity.Contract, error) {
 	var contract entity.Contract
 	err := r.db.WithContext(ctx).
+		Scopes(database.OrderScope(ctx)).
 		Preload("Order").
 		Preload("Termin").
 		Preload("RAB").

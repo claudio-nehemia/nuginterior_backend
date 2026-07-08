@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 
+	"github.com/claudio-nehemia/interior_backend/internal/database"
 	"github.com/claudio-nehemia/interior_backend/internal/entity"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -57,6 +58,7 @@ func NewMoodboardRepository(db *gorm.DB, logger *zap.Logger) MoodboardRepository
 func (r *moodboardRepository) FindAll(ctx context.Context) ([]entity.Moodboard, error) {
 	var list []entity.Moodboard
 	err := r.db.WithContext(ctx).
+		Scopes(database.OrderScope(ctx)).
 		Preload("Order").
 		Preload("Files").
 		Preload("Estimasi.Files").
@@ -69,6 +71,7 @@ func (r *moodboardRepository) FindAll(ctx context.Context) ([]entity.Moodboard, 
 func (r *moodboardRepository) FindByID(ctx context.Context, id uint) (*entity.Moodboard, error) {
 	var moodboard entity.Moodboard
 	err := r.db.WithContext(ctx).
+		Scopes(database.OrderScope(ctx)).
 		Preload("Order").
 		Preload("Files").
 		Preload("Estimasi.Files").
@@ -83,6 +86,7 @@ func (r *moodboardRepository) FindByID(ctx context.Context, id uint) (*entity.Mo
 func (r *moodboardRepository) FindByOrderID(ctx context.Context, orderID uint) (*entity.Moodboard, error) {
 	var moodboard entity.Moodboard
 	err := r.db.WithContext(ctx).
+		Scopes(database.OrderScope(ctx)).
 		Preload("Order").
 		Preload("Files").
 		Preload("Estimasi.Files").

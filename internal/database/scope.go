@@ -38,3 +38,34 @@ func CompanyScope(ctx context.Context) func(db *gorm.DB) *gorm.DB {
 		return db.Where("company_id = ?", companyID)
 	}
 }
+
+// OrderScope scopes GORM queries to the orders belonging to the user's company_id.
+func OrderScope(ctx context.Context) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		if ctx == nil {
+			return db
+		}
+
+		companyID, ok := ctx.Value(constants.ContextKeyCompanyID).(uint)
+		if !ok {
+			return db
+		}
+
+		role, _ := ctx.Value(constants.ContextKeyUserRole).(string)
+
+		// Super Admin of Company ID 1 has global filter privileges
+		if companyID == 1 && role == "Super Admin" {
+			if filterVal := ctx.Value(constants.ContextKeyFilterCompanyID); filterVal != nil {
+				if filterID, ok := filterVal.(uint); ok && filterID > 0 {
+					return db.Where("order_id IN (SELECT id FROM orders WHERE company_id = ?)", filterID)
+				}
+				return db
+			}
+			return db
+		}
+
+		// Everyone else is strictly scoped to their own company's orders
+		return db.Where("order_id IN (SELECT id FROM orders WHERE company_id = ?)", companyID)
+	}
+}
+

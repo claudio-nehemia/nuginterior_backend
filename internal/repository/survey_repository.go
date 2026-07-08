@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/claudio-nehemia/interior_backend/internal/database"
 	"github.com/claudio-nehemia/interior_backend/internal/entity"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -32,9 +33,9 @@ func NewSurveyRepository(db *gorm.DB, logger *zap.Logger) SurveyRepository {
 }
 
 func (r *surveyRepository) FindAll(ctx context.Context) ([]entity.Survey, error) {
-	// 1. Fetch all orders
+	// 1. Fetch all orders (scoped to company)
 	var orders []entity.Order
-	if err := r.db.WithContext(ctx).Find(&orders).Error; err != nil {
+	if err := r.db.WithContext(ctx).Scopes(database.CompanyScope(ctx)).Find(&orders).Error; err != nil {
 		return nil, err
 	}
 
@@ -72,9 +73,10 @@ func (r *surveyRepository) FindAll(ctx context.Context) ([]entity.Survey, error)
 		}
 	}
 
-	// 4. Query surveys with all preloads and proper ordering
+	// 4. Query surveys with all preloads and proper ordering (scoped to company orders)
 	var result []entity.Survey
 	err := r.db.WithContext(ctx).
+		Scopes(database.OrderScope(ctx)).
 		Preload("Order").
 		Preload("Order.Contracts").
 		Preload("Order.Teams.User").
@@ -89,6 +91,7 @@ func (r *surveyRepository) FindAll(ctx context.Context) ([]entity.Survey, error)
 func (r *surveyRepository) FindByID(ctx context.Context, id uint) (*entity.Survey, error) {
 	var survey entity.Survey
 	err := r.db.WithContext(ctx).
+		Scopes(database.OrderScope(ctx)).
 		Preload("Order").
 		Preload("Order.Contracts").
 		Preload("Order.Teams.User").

@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/claudio-nehemia/interior_backend/internal/database"
 	"github.com/claudio-nehemia/interior_backend/internal/entity"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -31,6 +32,7 @@ func NewRABRepository(db *gorm.DB, logger *zap.Logger) RABRepository {
 func (r *rabRepository) FindAll(ctx context.Context) ([]entity.RAB, error) {
 	var list []entity.RAB
 	err := r.db.WithContext(ctx).
+		Scopes(database.OrderScope(ctx)).
 		Preload("Order").
 		Preload("InputItem").
 		Preload("Rooms").
@@ -51,6 +53,7 @@ func (r *rabRepository) FindAll(ctx context.Context) ([]entity.RAB, error) {
 func (r *rabRepository) FindByID(ctx context.Context, id uint) (*entity.RAB, error) {
 	var rab entity.RAB
 	err := r.db.WithContext(ctx).
+		Scopes(database.OrderScope(ctx)).
 		Preload("Order").
 		Preload("InputItem").
 		Preload("Rooms").
@@ -73,6 +76,7 @@ func (r *rabRepository) FindByID(ctx context.Context, id uint) (*entity.RAB, err
 func (r *rabRepository) FindByInputItemID(ctx context.Context, inputItemID uint) (*entity.RAB, error) {
 	var rab entity.RAB
 	err := r.db.WithContext(ctx).
+		Scopes(database.OrderScope(ctx)).
 		Preload("Order").
 		Preload("InputItem").
 		Preload("Rooms").

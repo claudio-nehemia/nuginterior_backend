@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 
+	"github.com/claudio-nehemia/interior_backend/internal/database"
 	"github.com/claudio-nehemia/interior_backend/internal/entity"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -28,6 +29,7 @@ func NewInvoiceRepository(db *gorm.DB, logger *zap.Logger) InvoiceRepository {
 func (r *invoiceRepository) FindAllContractsWithInvoices(ctx context.Context) ([]entity.Contract, error) {
 	var list []entity.Contract
 	err := r.db.WithContext(ctx).
+		Scopes(database.OrderScope(ctx)).
 		Preload("Order").
 		Preload("Termin").
 		Preload("Invoices").
@@ -40,6 +42,7 @@ func (r *invoiceRepository) FindAllContractsWithInvoices(ctx context.Context) ([
 func (r *invoiceRepository) FindByID(ctx context.Context, id uint) (*entity.Invoice, error) {
 	var invoice entity.Invoice
 	err := r.db.WithContext(ctx).
+		Scopes(database.OrderScope(ctx)).
 		Preload("Contract").
 		Preload("Contract.Order").
 		Preload("Contract.Termin").

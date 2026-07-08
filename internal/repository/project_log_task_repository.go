@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 
+	"github.com/claudio-nehemia/interior_backend/internal/database"
 	"github.com/claudio-nehemia/interior_backend/internal/entity"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -27,6 +28,7 @@ func NewProjectLogTaskRepository(db *gorm.DB, logger *zap.Logger) ProjectLogTask
 func (r *projectLogTaskRepository) FindAll(ctx context.Context) ([]entity.ProjectLogTask, error) {
 	var list []entity.ProjectLogTask
 	err := r.db.WithContext(ctx).
+		Scopes(database.OrderScope(ctx)).
 		Preload("Order").
 		Order("id DESC").
 		Find(&list).Error
@@ -36,6 +38,7 @@ func (r *projectLogTaskRepository) FindAll(ctx context.Context) ([]entity.Projec
 func (r *projectLogTaskRepository) FindActiveByOrderIDAndStage(ctx context.Context, orderID uint, stage string) (*entity.ProjectLogTask, error) {
 	var log entity.ProjectLogTask
 	err := r.db.WithContext(ctx).
+		Scopes(database.OrderScope(ctx)).
 		Where("order_id = ? AND stage = ? AND completed_at IS NULL", orderID, stage).
 		First(&log).Error
 	if err != nil {

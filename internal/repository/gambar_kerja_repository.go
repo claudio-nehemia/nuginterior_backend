@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 
+	"github.com/claudio-nehemia/interior_backend/internal/database"
 	"github.com/claudio-nehemia/interior_backend/internal/entity"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -36,6 +37,7 @@ func NewGambarKerjaRepository(db *gorm.DB, logger *zap.Logger) GambarKerjaReposi
 func (r *gambarKerjaRepository) FindAll(ctx context.Context) ([]entity.GambarKerja, error) {
 	var list []entity.GambarKerja
 	err := r.db.WithContext(ctx).
+		Scopes(database.OrderScope(ctx)).
 		Preload("Order").
 		Preload("Files").
 		Order("id ASC").
@@ -46,6 +48,7 @@ func (r *gambarKerjaRepository) FindAll(ctx context.Context) ([]entity.GambarKer
 func (r *gambarKerjaRepository) FindByID(ctx context.Context, id uint) (*entity.GambarKerja, error) {
 	var gk entity.GambarKerja
 	err := r.db.WithContext(ctx).
+		Scopes(database.OrderScope(ctx)).
 		Preload("Order").
 		Preload("Files").
 		First(&gk, id).Error
@@ -58,6 +61,7 @@ func (r *gambarKerjaRepository) FindByID(ctx context.Context, id uint) (*entity.
 func (r *gambarKerjaRepository) FindByOrderID(ctx context.Context, orderID uint) (*entity.GambarKerja, error) {
 	var gk entity.GambarKerja
 	err := r.db.WithContext(ctx).
+		Scopes(database.OrderScope(ctx)).
 		Preload("Order").
 		Preload("Files").
 		Where("order_id = ?", orderID).
