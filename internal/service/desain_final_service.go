@@ -60,12 +60,6 @@ func NewDesainFinalService(
 }
 
 func (s *desainFinalService) checkCommitmentFee(ctx context.Context, orderID uint) error {
-	var responseEnabled string
-	s.db.WithContext(ctx).Model(&entity.Setting{}).Where("key = ?", "response_enabled").Pluck("value", &responseEnabled)
-	if responseEnabled == "false" {
-		return nil
-	}
-
 	m, err := s.moodboardRepo.FindByOrderID(ctx, orderID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -76,6 +70,14 @@ func (s *desainFinalService) checkCommitmentFee(ctx context.Context, orderID uin
 
 	if m.CommitmentFee == nil || m.CommitmentFee.PaymentStatus != "completed" {
 		return errors.New("desain final terkunci! Selesaikan pembayaran commitment fee terlebih dahulu")
+	}
+
+	var responseEnabled string
+	s.db.WithContext(ctx).Model(&entity.Setting{}).Where("key = ?", "response_enabled").Pluck("value", &responseEnabled)
+	if responseEnabled != "false" {
+		if m.CommitmentFee.ResponseTime == nil {
+			return errors.New("desain final terkunci! Klien wajib merespons commitment fee terlebih dahulu")
+		}
 	}
 
 	return nil

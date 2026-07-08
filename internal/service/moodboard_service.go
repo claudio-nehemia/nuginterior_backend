@@ -435,9 +435,6 @@ func (s *moodboardService) ResponseCommitmentFee(ctx context.Context, moodboardI
 		return nil, err
 	}
 
-	var responseEnabled string
-	s.db.WithContext(ctx).Model(&entity.Setting{}).Where("key = ?", "response_enabled").Pluck("value", &responseEnabled)
-
 	var hasApprovedKasar bool
 	for _, f := range m.Files {
 		if f.Status == "approved" {
@@ -445,7 +442,7 @@ func (s *moodboardService) ResponseCommitmentFee(ctx context.Context, moodboardI
 			break
 		}
 	}
-	if responseEnabled != "false" && !hasApprovedKasar {
+	if !hasApprovedKasar {
 		return nil, errors.New("moodboard kasar belum disetujui")
 	}
 

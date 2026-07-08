@@ -93,12 +93,8 @@ func (s *rabService) Create(ctx context.Context, req dto.CreateRABRequest) (*dto
 	if err != nil {
 		return nil, errors.New("rincian item tidak ditemukan")
 	}
-	var responseEnabled string
-	s.db.WithContext(ctx).Model(&entity.Setting{}).Where("key = ?", "response_enabled").Pluck("value", &responseEnabled)
-	if responseEnabled != "false" {
-		if ii.Status != "approved" {
-			return nil, errors.New("rincian item harus disetujui (approved) terlebih dahulu")
-		}
+	if ii.Status != "approved" {
+		return nil, errors.New("rincian item harus disetujui (approved) terlebih dahulu")
 	}
 
 	// Build GORM entity
