@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/claudio-nehemia/interior_backend/internal/database"
 	"github.com/claudio-nehemia/interior_backend/internal/dto"
 	"github.com/claudio-nehemia/interior_backend/internal/entity"
 	"github.com/claudio-nehemia/interior_backend/internal/repository"
@@ -71,7 +72,7 @@ func (s *invoiceService) GetContractInvoiceList(ctx context.Context) ([]dto.Cont
 		// Check setting finance_auto_invoice
 		var autoInvoice bool = true
 		var settingVal string
-		if err := s.db.WithContext(ctx).Model(&entity.Setting{}).Where("key = ?", "finance_auto_invoice").Pluck("value", &settingVal).Error; err == nil {
+		if err := s.db.WithContext(ctx).Scopes(database.CompanyScope(ctx)).Model(&entity.Setting{}).Where("key = ?", "finance_auto_invoice").Pluck("value", &settingVal).Error; err == nil {
 			autoInvoice = (settingVal == "true")
 		}
 
@@ -199,7 +200,7 @@ func (s *invoiceService) GetInvoicesByContractID(ctx context.Context, contractID
 	// Check setting finance_auto_invoice
 	var autoInvoice bool = true
 	var settingVal string
-	if err := s.db.WithContext(ctx).Model(&entity.Setting{}).Where("key = ?", "finance_auto_invoice").Pluck("value", &settingVal).Error; err == nil {
+	if err := s.db.WithContext(ctx).Scopes(database.CompanyScope(ctx)).Model(&entity.Setting{}).Where("key = ?", "finance_auto_invoice").Pluck("value", &settingVal).Error; err == nil {
 		autoInvoice = (settingVal == "true")
 	}
 
@@ -602,7 +603,7 @@ func (s *invoiceService) GenerateInvoicePDF(ctx context.Context, id uint) ([]byt
 
 	var taxEnabled bool
 	var settingVal string
-	if err := s.db.WithContext(ctx).Model(&entity.Setting{}).Where("key = ?", "finance_tax_enabled").Pluck("value", &settingVal).Error; err == nil {
+	if err := s.db.WithContext(ctx).Scopes(database.CompanyScope(ctx)).Model(&entity.Setting{}).Where("key = ?", "finance_tax_enabled").Pluck("value", &settingVal).Error; err == nil {
 		taxEnabled = (settingVal == "true")
 	}
 

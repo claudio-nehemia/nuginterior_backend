@@ -162,7 +162,7 @@ func (r *surveyRepository) UpdateOrderStage(ctx context.Context, orderID uint, s
 
 func (r *surveyRepository) IsMarketingResponseEnabled(ctx context.Context) (bool, error) {
 	var val string
-	err := r.db.WithContext(ctx).Model(&entity.Setting{}).Where("key = ?", "marketing_response_enabled").Pluck("value", &val).Error
+	err := r.db.WithContext(ctx).Scopes(database.CompanyScope(ctx)).Model(&entity.Setting{}).Where("key = ?", "marketing_response_enabled").Pluck("value", &val).Error
 	if err != nil {
 		return true, err
 	}

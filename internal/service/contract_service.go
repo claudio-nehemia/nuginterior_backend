@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/claudio-nehemia/interior_backend/internal/database"
 	"github.com/claudio-nehemia/interior_backend/internal/dto"
 	"github.com/claudio-nehemia/interior_backend/internal/entity"
 	"github.com/claudio-nehemia/interior_backend/internal/repository"
@@ -139,11 +140,11 @@ func (s *contractService) CreateContract(ctx context.Context, req dto.CreateCont
 
 	// Check setting workflow_rab_approval_required
 	var settingVal string
-	if err := s.db.WithContext(ctx).Model(&entity.Setting{}).Where("key = ?", "workflow_rab_approval_required").Pluck("value", &settingVal).Error; err == nil {
+	if err := s.db.WithContext(ctx).Scopes(database.CompanyScope(ctx)).Model(&entity.Setting{}).Where("key = ?", "workflow_rab_approval_required").Pluck("value", &settingVal).Error; err == nil {
 		if settingVal == "true" {
 			// Also check if response_enabled is active; if disabled, skip response check
 			var responseEnabled string
-			s.db.WithContext(ctx).Model(&entity.Setting{}).Where("key = ?", "response_enabled").Pluck("value", &responseEnabled)
+			s.db.WithContext(ctx).Scopes(database.CompanyScope(ctx)).Model(&entity.Setting{}).Where("key = ?", "response_enabled").Pluck("value", &responseEnabled)
 			if responseEnabled != "false" {
 				if !exists || contract.ResponseTime == nil {
 					return nil, errors.New("kontrak wajib merespons regular terlebih dahulu sebelum digenerate")

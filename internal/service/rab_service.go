@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/claudio-nehemia/interior_backend/internal/database"
 	"github.com/claudio-nehemia/interior_backend/internal/dto"
 	"github.com/claudio-nehemia/interior_backend/internal/entity"
 	"github.com/claudio-nehemia/interior_backend/internal/repository"
@@ -217,7 +218,7 @@ func (s *rabService) Create(ctx context.Context, req dto.CreateRABRequest) (*dto
 
 	var taxEnabled bool
 	var settingVal string
-	if err := s.db.WithContext(ctx).Model(&entity.Setting{}).Where("key = ?", "finance_tax_enabled").Pluck("value", &settingVal).Error; err == nil {
+	if err := s.db.WithContext(ctx).Scopes(database.CompanyScope(ctx)).Model(&entity.Setting{}).Where("key = ?", "finance_tax_enabled").Pluck("value", &settingVal).Error; err == nil {
 		taxEnabled = (settingVal == "true")
 	}
 
@@ -360,7 +361,7 @@ func (s *rabService) Update(ctx context.Context, id uint, req dto.UpdateRABReque
 
 	var taxEnabled bool
 	var settingVal string
-	if err := s.db.WithContext(ctx).Model(&entity.Setting{}).Where("key = ?", "finance_tax_enabled").Pluck("value", &settingVal).Error; err == nil {
+	if err := s.db.WithContext(ctx).Scopes(database.CompanyScope(ctx)).Model(&entity.Setting{}).Where("key = ?", "finance_tax_enabled").Pluck("value", &settingVal).Error; err == nil {
 		taxEnabled = (settingVal == "true")
 	}
 
@@ -1061,7 +1062,7 @@ func (s *rabService) ExportPDF(ctx context.Context, id uint, mode string) ([]byt
 
 	var taxEnabled bool
 	var settingVal string
-	if err := s.db.WithContext(ctx).Model(&entity.Setting{}).Where("key = ?", "finance_tax_enabled").Pluck("value", &settingVal).Error; err == nil {
+	if err := s.db.WithContext(ctx).Scopes(database.CompanyScope(ctx)).Model(&entity.Setting{}).Where("key = ?", "finance_tax_enabled").Pluck("value", &settingVal).Error; err == nil {
 		taxEnabled = (settingVal == "true")
 	}
 
@@ -1491,7 +1492,7 @@ func (s *rabService) ExportExcel(ctx context.Context, id uint, mode string) ([]b
 	// Check setting finance_tax_enabled
 	var taxEnabled bool
 	var settingVal string
-	if err := s.db.WithContext(ctx).Model(&entity.Setting{}).Where("key = ?", "finance_tax_enabled").Pluck("value", &settingVal).Error; err == nil {
+	if err := s.db.WithContext(ctx).Scopes(database.CompanyScope(ctx)).Model(&entity.Setting{}).Where("key = ?", "finance_tax_enabled").Pluck("value", &settingVal).Error; err == nil {
 		taxEnabled = (settingVal == "true")
 	}
 
