@@ -298,6 +298,7 @@ func SeedWorkplanStages(db *gorm.DB, logger *zap.Logger) {
 		var existing entity.WorkplanStageMaster
 		result := db.Where("code = ?", stg.Code).
 			Assign(entity.WorkplanStageMaster{
+				Code:       stg.Code,
 				Name:       stg.Name,
 				Percentage: stg.Percentage,
 				SortOrder:  stg.SortOrder,

@@ -23,7 +23,7 @@ type RegisterCompanyRequest struct {
 
 	CompanyName    string `json:"company_name" binding:"required,min=2,max=255"`
 	DirectorName   string `json:"director_name" binding:"required,min=2,max=255"`
-	CeoNik         string `json:"ceo_nik" binding:"required,min=16,max=16"`
+	CeoNik         string `json:"ceo_nik" binding:"required,min=3,max=50"`
 	Nib            string `json:"nib" binding:"omitempty"`
 	CompanyEmail   string `json:"company_email" binding:"required,email"`
 	CompanyPhone   string `json:"company_phone" binding:"required"`

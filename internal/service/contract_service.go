@@ -141,8 +141,13 @@ func (s *contractService) CreateContract(ctx context.Context, req dto.CreateCont
 	var settingVal string
 	if err := s.db.WithContext(ctx).Model(&entity.Setting{}).Where("key = ?", "workflow_rab_approval_required").Pluck("value", &settingVal).Error; err == nil {
 		if settingVal == "true" {
-			if !exists || contract.ResponseTime == nil {
-				return nil, errors.New("kontrak wajib merespons regular terlebih dahulu sebelum digenerate")
+			// Also check if response_enabled is active; if disabled, skip response check
+			var responseEnabled string
+			s.db.WithContext(ctx).Model(&entity.Setting{}).Where("key = ?", "response_enabled").Pluck("value", &responseEnabled)
+			if responseEnabled != "false" {
+				if !exists || contract.ResponseTime == nil {
+					return nil, errors.New("kontrak wajib merespons regular terlebih dahulu sebelum digenerate")
+				}
 			}
 		}
 	}
