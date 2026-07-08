@@ -313,3 +313,46 @@ func SeedWorkplanStages(db *gorm.DB, logger *zap.Logger) {
 	logger.Info("Workplan stage masters seeded", zap.Int("new_or_updated_stages", count))
 }
 
+// SyncPostgresSequences synchronizes all database sequences with the maximum ID of each table.
+func SyncPostgresSequences(db *gorm.DB, logger *zap.Logger) {
+	if db.Dialector.Name() != "postgres" {
+		return
+	}
+
+	tables := []string{
+		"companies",
+		"users",
+		"divisis",
+		"roles",
+		"permissions",
+		"role_permissions",
+		"workplan_stage_masters",
+		"settings",
+	}
+
+	for _, table := range tables {
+		var exists bool
+		err := db.Raw("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = ?)", table).Scan(&exists).Error
+		if err != nil || !exists {
+			continue
+		}
+
+		var maxID uint
+		err = db.Raw(fmt.Sprintf("SELECT COALESCE(MAX(id), 0) FROM %s", table)).Scan(&maxID).Error
+		if err != nil {
+			continue
+		}
+
+		if maxID > 0 {
+			seqName := fmt.Sprintf("%s_id_seq", table)
+			err = db.Exec(fmt.Sprintf("SELECT setval('%s', %d)", seqName, maxID)).Error
+			if err != nil {
+				logger.Warn("Failed to sync sequence", zap.String("table", table), zap.Error(err))
+			} else {
+				logger.Info("Synchronized database sequence", zap.String("table", table), zap.Uint("max_id", maxID))
+			}
+		}
+	}
+}
+
+
