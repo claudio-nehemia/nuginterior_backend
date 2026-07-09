@@ -39,10 +39,10 @@ func SeedAdminUser(db *gorm.DB, logger *zap.Logger) {
 	var company entity.Company
 	db.Where("id = ?", 1).FirstOrCreate(&company, entity.Company{
 		ID:           1,
-		Name:         "PT. INTERIORPRO INDONESIA",
+		Name:         "PT. ARSIFLOW INDONESIA",
 		DirectorName: "Super Admin",
 		CeoNik:       "1234567890123456",
-		Email:        "admin@interiorpro.com",
+		Email:        "admin@arsiflow.com",
 		Phone:        "+62 812-0000-0000",
 		Status:       "verified",
 	})
@@ -75,19 +75,24 @@ func SeedAdminUser(db *gorm.DB, logger *zap.Logger) {
 
 	// 4. Create User
 	var user entity.User
-	result := db.Where("email = ?", "admin@interiorpro.com").First(&user)
+	result := db.Where("email = ? OR email = ?", "admin@arsiflow.com", "admin@interiorpro.com").First(&user)
 	if result.Error != nil && result.Error == gorm.ErrRecordNotFound {
 		hashedPassword, _ := helper.HashPassword("password")
 		user = entity.User{
 			CompanyID: 1,
 			Name:      "Admin User",
-			Email:     "admin@interiorpro.com",
+			Email:     "admin@arsiflow.com",
 			Password:  hashedPassword,
 			RoleID:    &role.ID,
 		}
 		db.Create(&user)
 		logger.Info("Default Admin user created", zap.String("email", user.Email))
 	} else {
+		if user.Email == "admin@interiorpro.com" {
+			user.Email = "admin@arsiflow.com"
+			db.Save(&user)
+			logger.Info("Updated default Admin user email to admin@arsiflow.com")
+		}
 		logger.Info("Default Admin user already exists")
 	}
 }
@@ -101,15 +106,16 @@ func SeedSettings(db *gorm.DB, logger *zap.Logger) {
 		{Key: "workflow_rab_approval_required", Value: "true", Description: "Menentukan apakah pembuatan Kontrak harus menunggu persetujuan (approval) RAB dari klien di sistem"},
 		{Key: "finance_tax_enabled", Value: "false", Description: "Menentukan apakah sistem otomatis menambahkan PPN (11%) pada setiap RAB dan Invoice yang terbit"},
 		{Key: "finance_auto_invoice", Value: "true", Description: "Jika diaktifkan, sistem otomatis men-generate invoice baru begitu kontrak disetujui (deal)"},
-		{Key: "company_name", Value: "PT. INTERIORPRO INDONESIA", Description: "Nama Perusahaan"},
+		{Key: "company_name", Value: "PT. ARSIFLOW INDONESIA", Description: "Nama Perusahaan"},
 		{Key: "company_director", Value: "Super Admin", Description: "Nama Direktur Perusahaan"},
 		{Key: "company_logo", Value: "", Description: "URL Logo Perusahaan"},
 		{Key: "company_address", Value: "Alamat Perusahaan", Description: "Alamat Kantor Perusahaan"},
 		{Key: "company_bank_name", Value: "BANK CENTRAL ASIA (BCA)", Description: "Nama Bank Perusahaan"},
 		{Key: "company_bank_account", Value: "000-000-0000", Description: "Nomor Rekening Perusahaan"},
-		{Key: "company_bank_holder", Value: "PT. INTERIORPRO INDONESIA", Description: "Nama Pemegang Rekening Perusahaan"},
-		{Key: "company_email", Value: "finance@interiorpro.com", Description: "Email Perusahaan"},
+		{Key: "company_bank_holder", Value: "PT. ARSIFLOW INDONESIA", Description: "Nama Pemegang Rekening Perusahaan"},
+		{Key: "company_email", Value: "finance@arsiflow.com", Description: "Email Perusahaan"},
 		{Key: "company_phone", Value: "+62 812-0000-0000", Description: "Nomor Telepon Perusahaan"},
+		{Key: "default_active_days", Value: "4", Description: "Masa berlaku akun default untuk perusahaan baru (hari)"},
 		{Key: "workplan_stage_deletion_policy", Value: "split_equally", Description: "Kebijakan pembagian persentase saat tahapan dihapus dari workplan (split_equally, transfer_to_next, transfer_to_previous)"},
 		{Key: "deadline_stage_survey", Value: "3", Description: "Batas waktu penyelesaian tahap Survey (hari)"},
 		{Key: "deadline_stage_moodboard", Value: "5", Description: "Batas waktu penyelesaian tahap Moodboard (hari)"},
@@ -217,7 +223,7 @@ func SeedUsers(db *gorm.DB, logger *zap.Logger) {
 		for i := count; i < 3; i++ {
 			// Format role name to be a clean email prefix
 			roleClean := strings.ToLower(strings.ReplaceAll(role.NamaRole, " ", ""))
-			email := fmt.Sprintf("%s%d@interiorpro.com", roleClean, i+1)
+			email := fmt.Sprintf("%s%d@arsiflow.com", roleClean, i+1)
 			name := fmt.Sprintf("%s User %d", role.NamaRole, i+1)
 
 			user := entity.User{

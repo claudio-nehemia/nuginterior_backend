@@ -55,13 +55,13 @@ func main() {
 	// 1. Ensure company with ID = 1 exists
 	var company entity.Company
 	if err := db.First(&company, 1).Error; err != nil {
-		fmt.Println("[Database] Seed company PT. INTERIORPRO INDONESIA...")
+		fmt.Println("[Database] Seed company PT. ARSIFLOW INDONESIA...")
 		company = entity.Company{
 			ID:           1,
-			Name:         "PT. INTERIORPRO INDONESIA",
+			Name:         "PT. ARSIFLOW INDONESIA",
 			DirectorName: "Super Admin",
 			CeoNik:       "1234567890123456",
-			Email:        "admin@interiorpro.com",
+			Email:        "admin@arsiflow.com",
 			Phone:        "+62 812-0000-0000",
 			Status:       "verified",
 		}

@@ -97,7 +97,7 @@ func GenerateApprovalMaterialPDF(am *dto.ApprovalMaterialResponse, cp CompanyPro
 	pdf.SetFont("Arial", "", 8)
 	pdf.SetTextColor(120, 120, 120)
 	pdf.SetXY(15, pdf.GetY())
-	pdf.CellFormat(80, 4, "(Nuginterior Team)", "", 0, "C", false, 0, "")
+	pdf.CellFormat(80, 4, "(Arsiflow Team)", "", 0, "C", false, 0, "")
 	pdf.SetXY(115, pdf.GetY()-4)
 	pdf.CellFormat(80, 4, "(Owner / Client)", "", 1, "C", false, 0, "")
 

@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"strconv"
+	"time"
 
 	"github.com/claudio-nehemia/interior_backend/internal/entity"
 	"go.uber.org/zap"
@@ -68,6 +70,19 @@ func (r *authRepository) FindCompanyByID(ctx context.Context, id uint) (*entity.
 
 func (r *authRepository) CreateCompanyAndUser(ctx context.Context, company *entity.Company, user *entity.User) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Get default_active_days from global settings (company_id = 1)
+		var val string
+		err := tx.Table("settings").Where("company_id = ? AND key = ?", 1, "default_active_days").Pluck("value", &val).Error
+		days := 4 // Default fallback
+		if err == nil && val != "" {
+			if parsedDays, err := strconv.Atoi(val); err == nil {
+				days = parsedDays
+			}
+		}
+
+		expiredAt := time.Now().AddDate(0, 0, days)
+		company.ExpiredAt = &expiredAt
+
 		if err := tx.Create(company).Error; err != nil {
 			return err
 		}

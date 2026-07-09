@@ -2391,7 +2391,7 @@ func (s *workplanService) GenerateBastPDF(ctx context.Context, id uint) ([]byte,
 	pdf.MultiCell(0, 5, introText, "", "L", false)
 	pdf.Ln(4)
 
-	// Party 1 - First Party (Nuginterior)
+	// Party 1 - First Party (Arsiflow)
 	pdf.SetFont("Arial", "B", 10)
 	pdf.CellFormat(0, 5, "1. PIHAK PERTAMA (Penyedia Jasa):", "", 1, "L", false, 0, "")
 	pdf.SetFont("Arial", "", 10)
@@ -2448,7 +2448,7 @@ func (s *workplanService) GenerateBastPDF(ctx context.Context, id uint) ([]byte,
 	
 	pdf.SetFont("Arial", "BU", 10)
 	pdf.SetX(20)
-	pdf.CellFormat(80, 5, "   ( Nuginterior Team )   ", "", 0, "C", false, 0, "")
+	pdf.CellFormat(80, 5, "   ( Arsiflow Team )   ", "", 0, "C", false, 0, "")
 	pdf.SetX(110)
 	pdf.CellFormat(80, 5, fmt.Sprintf("   ( %s )   ", order.NamaCustomer), "", 1, "C", false, 0, "")
 

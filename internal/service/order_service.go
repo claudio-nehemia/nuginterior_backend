@@ -400,7 +400,7 @@ func (s *orderService) ExportPDF(ctx context.Context, params map[string]string) 
 	// Title
 	pdf.SetFont("Arial", "B", 12)
 	pdf.SetTextColor(50, 50, 50)
-	pdf.CellFormat(0, 6, "LAPORAN DATA ORDER PROYEK NUGINTERIOR", "", 1, "C", false, 0, "")
+	pdf.CellFormat(0, 6, "LAPORAN DATA ORDER PROYEK ARSIFLOW", "", 1, "C", false, 0, "")
 	pdf.SetFont("Arial", "I", 8)
 	pdf.SetTextColor(120, 120, 120)
 	pdf.CellFormat(0, 4, fmt.Sprintf("Di-export pada: %s", time.Now().Format("02 January 2006 15:04:05")), "", 1, "C", false, 0, "")

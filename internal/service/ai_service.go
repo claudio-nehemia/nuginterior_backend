@@ -157,9 +157,9 @@ func (s *aiService) GenerateSurveyBrief(ctx context.Context, surveyID uint) (str
 		interiorType = survey.Order.JenisInterior
 	}
 
-	systemPrompt := "You are a professional senior interior design assistant for Nuginterior. Your job is to read raw survey notes and measurements and generate a clean, detailed, and professional design brief (instructions) for the designer in Indonesian. Output your response in structured Markdown."
+	systemPrompt := "You are a professional senior interior design assistant for Arsiflow. Your job is to read raw survey notes and measurements and generate a clean, detailed, and professional design brief (instructions) for the designer in Indonesian. Output your response in structured Markdown."
 
-	userPrompt := fmt.Sprintf(`### DATA SURVEY PROYEK NUGINTERIOR
+	userPrompt := fmt.Sprintf(`### DATA SURVEY PROYEK ARSIFLOW
 - **Nama Proyek**: %s
 - **Nama Customer**: %s
 - **Jenis Interior**: %s
@@ -180,7 +180,7 @@ Format output dalam Markdown yang terstruktur dan indah.`, projectName, customer
 }
 
 func (s *aiService) AnalyzeGlobalDashboard(ctx context.Context, stats dto.DashboardStatsResponse) (string, error) {
-	systemPrompt := "You are a senior business analyst and executive assistant at Nuginterior (premium interior design & architecture firm). Your job is to analyze the company's overall statistics, omset, cashflow, and active projects, and provide a concise, high-level business report for the director. Output your response in structured Markdown in Indonesian."
+	systemPrompt := "You are a senior business analyst and executive assistant at Arsiflow (premium interior design & architecture firm). Your job is to analyze the company's overall statistics, omset, cashflow, and active projects, and provide a concise, high-level business report for the director. Output your response in structured Markdown in Indonesian."
 
 	userPrompt := fmt.Sprintf(`### DATA UTAMA PERUSAHAAN (DASBOARD GLOBAL)
 - **Total Seluruh Order**: %d
@@ -274,7 +274,7 @@ func (s *aiService) AnalyzeProjectHealth(ctx context.Context, orderID uint) (str
 		}
 	}
 
-	systemPrompt := "You are a senior project manager at Nuginterior. Your job is to audit a project's health using its financial and timeline data. You must provide a project health status (HEALTHY, WARNING, or CRITICAL) followed by a detailed audit report. Output your response in structured Markdown in Indonesian."
+	systemPrompt := "You are a senior project manager at Arsiflow. Your job is to audit a project's health using its financial and timeline data. You must provide a project health status (HEALTHY, WARNING, or CRITICAL) followed by a detailed audit report. Output your response in structured Markdown in Indonesian."
 
 	workplanStatus := "Belum dibuat"
 	if hasWorkplan {

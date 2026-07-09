@@ -95,6 +95,7 @@ func SeedCompanyDefaults(db *gorm.DB, companyID uint) error {
 		{Key: "company_bank_holder", Value: "Nama Pemegang Rekening Perusahaan", Description: "Nama Pemegang Rekening Perusahaan"},
 		{Key: "company_email", Value: "office@company.com", Description: "Email Perusahaan"},
 		{Key: "company_phone", Value: "+62 812-0000-0000", Description: "Nomor Telepon Perusahaan"},
+		{Key: "default_active_days", Value: "4", Description: "Masa berlaku akun default untuk perusahaan baru (hari)"},
 		{Key: "workplan_stage_deletion_policy", Value: "split_equally", Description: "Kebijakan pembagian persentase saat tahapan dihapus dari workplan (split_equally, transfer_to_next, transfer_to_previous)"},
 		{Key: "deadline_stage_survey", Value: "3", Description: "Batas waktu penyelesaian tahap Survey (hari)"},
 		{Key: "deadline_stage_moodboard", Value: "5", Description: "Batas waktu penyelesaian tahap Moodboard (hari)"},

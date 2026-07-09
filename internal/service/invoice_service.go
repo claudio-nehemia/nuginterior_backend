@@ -661,7 +661,7 @@ func (s *invoiceService) GenerateInvoicePDF(ctx context.Context, id uint) ([]byt
 	pdf.CellFormat(0, 5, fmt.Sprintf("Atas Nama: %s", cp.BankHolder), "", 1, "L", false, 0, "")
 	pdf.SetFont("Arial", "I", 8.5)
 	pdf.SetTextColor(120, 120, 120)
-	pdf.CellFormat(0, 4, "*Harap unggah bukti transfer ke sistem Nuginterior untuk verifikasi pelunasan.", "", 1, "L", false, 0, "")
+	pdf.CellFormat(0, 4, "*Harap unggah bukti transfer ke sistem Arsiflow untuk verifikasi pelunasan.", "", 1, "L", false, 0, "")
 	pdf.Ln(8)
 
 	// Signatures
