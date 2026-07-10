@@ -31,6 +31,37 @@ func SeedPermissions(db *gorm.DB, logger *zap.Logger) {
 		}
 	}
 	logger.Info("Permissions seeded", zap.Int("count", len(allPerms)))
+	SyncAdminPermissions(db, logger)
+}
+
+// SyncAdminPermissions ensures that all Admin, Owner, and Super Admin roles across all companies have all system permissions.
+func SyncAdminPermissions(db *gorm.DB, logger *zap.Logger) {
+	var perms []entity.Permission
+	if err := db.Find(&perms).Error; err != nil {
+		logger.Error("Failed to load permissions for admin sync", zap.Error(err))
+		return
+	}
+
+	var roles []entity.Role
+	if err := db.Where("nama_role IN ?", []string{"Admin", "Owner", "Super Admin"}).Find(&roles).Error; err != nil {
+		logger.Error("Failed to load admin/owner roles for sync", zap.Error(err))
+		return
+	}
+
+	count := 0
+	for _, r := range roles {
+		for _, p := range perms {
+			var rp entity.RolePermission
+			err := db.Where("role_id = ? AND permission_id = ?", r.ID, p.ID).FirstOrCreate(&rp, entity.RolePermission{
+				RoleID:       r.ID,
+				PermissionID: p.ID,
+			}).Error
+			if err == nil {
+				count++
+			}
+		}
+	}
+	logger.Info("Synchronized administrator permissions", zap.Int("roles_processed", len(roles)), zap.Int("total_permissions_mapped", count))
 }
 
 // SeedAdminUser creates a default division, superadmin role, and the first admin user.
