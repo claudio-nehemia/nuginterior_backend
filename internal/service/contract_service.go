@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -445,61 +446,93 @@ func (s *contractService) GenerateContractPDF(ctx context.Context, id uint) ([]b
 	pdf.MultiCell(0, 5, agreementIntro, "", "L", false)
 	pdf.Ln(5)
 
-	// Article 1
-	pdf.SetFont("Arial", "B", 10)
-	pdf.CellFormat(0, 5, "PASAL 1: LINGKUP PEKERJAAN DAN OBJEK PROYEK", "", 1, "L", false, 0, "")
-	pdf.SetFont("Arial", "", 9.5)
-	art1Body := fmt.Sprintf("Pihak Pertama berkewajiban untuk menyelesaikan pekerjaan interior untuk Pihak Kedua pada proyek bernama \"%s\" dengan kategori jenis interior \"%s\" beralamat di \"%s\". Rincian pengerjaan mengacu sepenuhnya pada Rencana Anggaran Biaya (RAB) nomor %d.", projName, interiorType, custAddress, rab.ID)
-	pdf.MultiCell(0, 5, art1Body, "", "L", false)
-	pdf.Ln(4)
-
-	// Article 2
-	pdf.SetFont("Arial", "B", 10)
-	pdf.CellFormat(0, 5, "PASAL 2: NILAI KONTRAK", "", 1, "L", false, 0, "")
-	pdf.SetFont("Arial", "", 9.5)
-	art2Body := fmt.Sprintf("Nilai kontrak keseluruhan yang disepakati oleh kedua belah pihak adalah sebesar Rp %s (rupiah) sesuai dengan total perhitungan RAB yang telah disetujui bersama.", formatRupiah(rab.GrandTotal))
-	pdf.MultiCell(0, 5, art2Body, "", "L", false)
-	pdf.Ln(4)
-
-	// Article 3
-	pdf.SetFont("Arial", "B", 10)
-	pdf.CellFormat(0, 5, "PASAL 3: KETENTUAN DAN TERMIN PEMBAYARAN", "", 1, "L", false, 0, "")
-	pdf.SetFont("Arial", "", 9.5)
+	// Resolve termin name before dynamic clauses
 	terminName := "Custom Term"
 	if contract.Termin != nil {
 		terminName = contract.Termin.NamaTipe
 	}
-	art3Body := fmt.Sprintf("Metode pembayaran disepakati menggunakan skema termin \"%s\", dengan rincian pembagian sebagai berikut:", terminName)
-	pdf.MultiCell(0, 5, art3Body, "", "L", false)
-	pdf.Ln(2)
 
-	// Display termin details table
-	if contract.Termin != nil {
-		pdf.SetFont("Arial", "B", 9)
-		pdf.SetFillColor(240, 240, 240)
-		pdf.CellFormat(15, 6, "Step", "1", 0, "C", true, 0, "")
-		pdf.CellFormat(85, 6, "Tahapan Pekerjaan / Keterangan", "1", 0, "L", true, 0, "")
-		pdf.CellFormat(25, 6, "Persentase", "1", 0, "C", true, 0, "")
-		pdf.CellFormat(45, 6, "Jumlah Pembayaran (Rupiah)", "1", 1, "R", true, 0, "")
+	// Fetch dynamic contract clauses from settings
+	var clausesJSON string
+	if err := s.db.WithContext(ctx).Scopes(database.CompanyScope(ctx)).Model(&entity.Setting{}).Where("company_id = ? AND key = ?", companyID, "contract_clauses").Pluck("value", &clausesJSON).Error; err != nil || clausesJSON == "" {
+		// use default if not found
+		clausesJSON = `[{"title":"PASAL 1: LINGKUP PEKERJAAN DAN OBJEK PROYEK","content":"Pihak Pertama berkewajiban untuk menyelesaikan pekerjaan interior untuk Pihak Kedua pada proyek bernama \"{nama_project}\" dengan kategori jenis interior \"{jenis_interior}\" beralamat di \"{alamat_customer}\". Rincian pengerjaan mengacu sepenuhnya pada Rencana Anggaran Biaya (RAB) nomor {rab_id}."},{"title":"PASAL 2: NILAI KONTRAK","content":"Nilai kontrak keseluruhan yang disepakati oleh kedua belah pihak adalah sebesar Rp {nilai_kontrak} (rupiah) sesuai dengan total perhitungan RAB yang telah disetujui bersama."},{"title":"PASAL 3: KETENTUAN DAN TERMIN PEMBAYARAN","content":"Metode pembayaran disepakati menggunakan skema termin \"{skema_termin}\", dengan rincian pembagian sebagai berikut:\n\n{tabel_termin}"},{"title":"PASAL 4: JANGKA WAKTU PENGERJAAN","content":"Seluruh lingkup pengerjaan disepakati akan diselesaikan oleh Pihak Pertama dalam jangka waktu pengerjaan selama {lama_kontrak} terhitung sejak ditandatanganinya perjanjian ini dan pembayaran termin pertama (DP) telah diterima oleh Pihak Pertama."}]`
+	}
 
-		pdf.SetFont("Arial", "", 9)
-		for _, item := range contract.Termin.Tahapan {
-			amount := (item.Persentase / 100.0) * rab.GrandTotal
-			pdf.CellFormat(15, 6, fmt.Sprintf("%d", item.Step), "1", 0, "C", false, 0, "")
-			pdf.CellFormat(85, 6, " "+item.Text, "1", 0, "L", false, 0, "")
-			pdf.CellFormat(25, 6, fmt.Sprintf("%.1f%%", item.Persentase), "1", 0, "C", false, 0, "")
-			pdf.CellFormat(45, 6, fmt.Sprintf("Rp %s ", formatRupiah(amount)), "1", 1, "R", false, 0, "")
+	var clauses []struct {
+		Title   string `json:"title"`
+		Content string `json:"content"`
+	}
+	if err := json.Unmarshal([]byte(clausesJSON), &clauses); err != nil {
+		return nil, "", fmt.Errorf("failed to parse contract clauses: %w", err)
+	}
+
+	// Build placeholder replacements
+	replacements := map[string]string{
+		"{nama_project}":        projName,
+		"{jenis_interior}":      interiorType,
+		"{alamat_customer}":     custAddress,
+		"{nama_customer}":       custName,
+		"{telepon_customer}":    custPhone,
+		"{email_customer}":      custEmail,
+		"{nama_perusahaan}":     cp.Name,
+		"{direktur_perusahaan}": cp.Director,
+		"{alamat_perusahaan}":   cp.Address,
+		"{nilai_kontrak}":       formatRupiah(rab.GrandTotal),
+		"{skema_termin}":        terminName,
+		"{lama_kontrak}":        contract.LamaKontrak,
+		"{rab_id}":              fmt.Sprintf("%d", rab.ID),
+	}
+
+	// Render each clause dynamically
+	for _, clause := range clauses {
+		// Print clause title
+		pdf.SetFont("Arial", "B", 10)
+		pdf.CellFormat(0, 5, clause.Title, "", 1, "L", false, 0, "")
+		pdf.SetFont("Arial", "", 9.5)
+
+		// Replace all placeholders in content
+		content := clause.Content
+		for placeholder, value := range replacements {
+			content = strings.ReplaceAll(content, placeholder, value)
 		}
+
+		// Check if content contains the termin table placeholder
+		if strings.Contains(content, "{tabel_termin}") {
+			parts := strings.SplitN(content, "{tabel_termin}", 2)
+			// Render text before the table
+			if strings.TrimSpace(parts[0]) != "" {
+				pdf.MultiCell(0, 5, parts[0], "", "L", false)
+			}
+			// Render termin details table
+			if contract.Termin != nil {
+				pdf.SetFont("Arial", "B", 9)
+				pdf.SetFillColor(240, 240, 240)
+				pdf.CellFormat(15, 6, "Step", "1", 0, "C", true, 0, "")
+				pdf.CellFormat(85, 6, "Tahapan Pekerjaan / Keterangan", "1", 0, "L", true, 0, "")
+				pdf.CellFormat(25, 6, "Persentase", "1", 0, "C", true, 0, "")
+				pdf.CellFormat(45, 6, "Jumlah Pembayaran (Rupiah)", "1", 1, "R", true, 0, "")
+
+				pdf.SetFont("Arial", "", 9)
+				for _, item := range contract.Termin.Tahapan {
+					amount := (item.Persentase / 100.0) * rab.GrandTotal
+					pdf.CellFormat(15, 6, fmt.Sprintf("%d", item.Step), "1", 0, "C", false, 0, "")
+					pdf.CellFormat(85, 6, " "+item.Text, "1", 0, "L", false, 0, "")
+					pdf.CellFormat(25, 6, fmt.Sprintf("%.1f%%", item.Persentase), "1", 0, "C", false, 0, "")
+					pdf.CellFormat(45, 6, fmt.Sprintf("Rp %s ", formatRupiah(amount)), "1", 1, "R", false, 0, "")
+				}
+			}
+			// Render text after the table
+			if len(parts) > 1 && strings.TrimSpace(parts[1]) != "" {
+				pdf.SetFont("Arial", "", 9.5)
+				pdf.MultiCell(0, 5, parts[1], "", "L", false)
+			}
+		} else {
+			pdf.MultiCell(0, 5, content, "", "L", false)
+		}
+		pdf.Ln(4)
 	}
 	pdf.Ln(4)
-
-	// Article 4
-	pdf.SetFont("Arial", "B", 10)
-	pdf.CellFormat(0, 5, "PASAL 4: JANGKA WAKTU PENGERJAAN", "", 1, "L", false, 0, "")
-	pdf.SetFont("Arial", "", 9.5)
-	art4Body := fmt.Sprintf("Seluruh lingkup pengerjaan disepakati akan diselesaikan oleh Pihak Pertama dalam jangka waktu pengerjaan selama %s terhitung sejak ditandatanganinya perjanjian ini dan pembayaran termin pertama (DP) telah diterima oleh Pihak Pertama.", contract.LamaKontrak)
-	pdf.MultiCell(0, 5, art4Body, "", "L", false)
-	pdf.Ln(8)
 
 	// Signatures section
 	pdf.SetFont("Arial", "", 9.5)
