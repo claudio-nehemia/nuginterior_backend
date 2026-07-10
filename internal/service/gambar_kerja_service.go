@@ -100,7 +100,7 @@ func (s *gambarKerjaService) verifyUploadAccess(ctx context.Context, orderID uin
 		return fmt.Errorf("user tidak ditemukan: %w", err)
 	}
 
-	if user.Role != nil && user.Role.NamaRole == "Super Admin" {
+	if user.Role != nil && (user.Role.NamaRole == "Super Admin" || user.Role.NamaRole == "Admin" || user.Role.NamaRole == "Owner") {
 		return nil
 	}
 
@@ -121,7 +121,7 @@ func (s *gambarKerjaService) verifyUploadAccess(ctx context.Context, orderID uin
 		}
 	}
 
-	return errors.New("akses ditolak! Hanya drafter, desainer, PM di tim survey ulang, atau Super Admin yang dapat mengunggah")
+	return errors.New("akses ditolak! Hanya drafter, desainer, PM di tim survey ulang, atau administrator yang dapat mengunggah")
 }
 
 func (s *gambarKerjaService) GetAll(ctx context.Context) ([]dto.GambarKerjaResponse, error) {
