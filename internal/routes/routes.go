@@ -327,7 +327,7 @@ func Register(router *gin.Engine, services *service.Services, cfg *config.Config
 		// SETTINGS
 		settings := protected.Group("/settings")
 		{
-			settings.GET("", middleware.RequirePermission(services.Auth, constants.PermSettingIndex), handlers.Setting.Index)
+			settings.GET("", handlers.Setting.Index)
 			settings.PUT("/:key", middleware.RequirePermission(services.Auth, constants.PermSettingUpdate), handlers.Setting.Update)
 			settings.GET("/workplan-stages", middleware.RequirePermission(services.Auth, constants.PermSettingIndex), handlers.Workplan.GetStageMasters)
 			settings.PUT("/workplan-stages", middleware.RequirePermission(services.Auth, constants.PermSettingUpdate), handlers.Workplan.UpdateStageMasters)

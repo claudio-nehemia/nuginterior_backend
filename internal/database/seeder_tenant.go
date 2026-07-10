@@ -61,23 +61,62 @@ func SeedCompanyDefaults(db *gorm.DB, companyID uint) error {
 		return fmt.Errorf("failed to load permissions: %w", err)
 	}
 
-	// Admin role gets all permissions
-	adminRoleID := roleMap["Admin"]
-	for _, p := range allPerms {
-		db.FirstOrCreate(&entity.RolePermission{}, entity.RolePermission{
-			RoleID:       adminRoleID,
-			PermissionID: p.ID,
-		})
-	}
+	for rName, rID := range roleMap {
+		for _, p := range allPerms {
+			shouldAssign := false
 
-	// Legal Admin gets invoice.* permissions
-	legalRoleID := roleMap["Legal Admin"]
-	for _, p := range allPerms {
-		if strings.HasPrefix(p.Name, "invoice.") {
-			db.FirstOrCreate(&entity.RolePermission{}, entity.RolePermission{
-				RoleID:       legalRoleID,
-				PermissionID: p.ID,
-			})
+			switch rName {
+			case "Admin", "Owner":
+				// Admin & Owner get everything
+				shouldAssign = true
+			case "Legal Admin":
+				// Invoice, Contract, and basic Order/Setting access
+				shouldAssign = strings.HasPrefix(p.Name, "invoice.") ||
+					strings.HasPrefix(p.Name, "contract.") ||
+					p.Name == "order.index" || p.Name == "order.show" ||
+					p.Name == "setting.index"
+			case "Desainer", "Drafter":
+				// Moodboard, Input Item, and basic Order/Setting access
+				shouldAssign = strings.HasPrefix(p.Name, "moodboard.") ||
+					strings.HasPrefix(p.Name, "input_item.") ||
+					p.Name == "order.index" || p.Name == "order.show" ||
+					p.Name == "setting.index"
+			case "Surveyor":
+				// Survey and basic Order/Setting access
+				shouldAssign = strings.HasPrefix(p.Name, "survey.") ||
+					p.Name == "order.index" || p.Name == "order.show" ||
+					p.Name == "setting.index"
+			case "Estimator":
+				// RAB, Input Item reading, and basic Order/Setting access
+				shouldAssign = strings.HasPrefix(p.Name, "rab.") ||
+					p.Name == "input_item.index" || p.Name == "input_item.show" ||
+					p.Name == "order.index" || p.Name == "order.show" ||
+					p.Name == "setting.index"
+			case "Customer Service":
+				// Order (create/read), Survey (create/read)
+				shouldAssign = p.Name == "order.index" || p.Name == "order.show" || p.Name == "order.create" || p.Name == "order.update" ||
+					p.Name == "survey.index" || p.Name == "survey.show" || p.Name == "survey.create" || p.Name == "survey.update" ||
+					p.Name == "setting.index"
+			case "Kepala Marketing":
+				// CS access plus marketing response overrides
+				shouldAssign = p.Name == "order.index" || p.Name == "order.show" || p.Name == "order.create" || p.Name == "order.update" ||
+					p.Name == "survey.index" || p.Name == "survey.show" || p.Name == "survey.create" || p.Name == "survey.update" ||
+					p.Name == "survey.marketing_response" || p.Name == "moodboard.marketing_response" ||
+					p.Name == "setting.index"
+			case "Supervisor", "Project Manager":
+				// Workplan, Survey Ulang, Project Management
+				shouldAssign = strings.HasPrefix(p.Name, "workplan.") ||
+					p.Name == "order.index" || p.Name == "order.show" ||
+					p.Name == "survey.index" || p.Name == "survey.show" ||
+					p.Name == "setting.index"
+			}
+
+			if shouldAssign {
+				db.FirstOrCreate(&entity.RolePermission{}, entity.RolePermission{
+					RoleID:       rID,
+					PermissionID: p.ID,
+				})
+			}
 		}
 	}
 
