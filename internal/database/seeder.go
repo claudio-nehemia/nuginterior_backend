@@ -31,37 +31,87 @@ func SeedPermissions(db *gorm.DB, logger *zap.Logger) {
 		}
 	}
 	logger.Info("Permissions seeded", zap.Int("count", len(allPerms)))
-	SyncAdminPermissions(db, logger)
+	SyncAllRolePermissions(db, logger)
 }
 
-// SyncAdminPermissions ensures that all Admin, Owner, and Super Admin roles across all companies have all system permissions.
-func SyncAdminPermissions(db *gorm.DB, logger *zap.Logger) {
+// SyncAllRolePermissions ensures that all roles across all companies have their default system permissions populated on startup.
+func SyncAllRolePermissions(db *gorm.DB, logger *zap.Logger) {
 	var perms []entity.Permission
 	if err := db.Find(&perms).Error; err != nil {
-		logger.Error("Failed to load permissions for admin sync", zap.Error(err))
+		logger.Error("Failed to load permissions for sync", zap.Error(err))
 		return
 	}
 
 	var roles []entity.Role
-	if err := db.Where("nama_role IN ?", []string{"Admin", "Owner", "Super Admin"}).Find(&roles).Error; err != nil {
-		logger.Error("Failed to load admin/owner roles for sync", zap.Error(err))
+	if err := db.Find(&roles).Error; err != nil {
+		logger.Error("Failed to load roles for sync", zap.Error(err))
 		return
 	}
 
 	count := 0
 	for _, r := range roles {
 		for _, p := range perms {
-			var rp entity.RolePermission
-			err := db.Where("role_id = ? AND permission_id = ?", r.ID, p.ID).FirstOrCreate(&rp, entity.RolePermission{
-				RoleID:       r.ID,
-				PermissionID: p.ID,
-			}).Error
-			if err == nil {
-				count++
+			shouldAssign := false
+
+			switch r.NamaRole {
+			case "Admin", "Owner", "Super Admin":
+				// Admin & Owner get everything
+				shouldAssign = true
+			case "Legal Admin":
+				// Invoice, Contract, and basic Order/Setting access
+				shouldAssign = strings.HasPrefix(p.Name, "invoice.") ||
+					strings.HasPrefix(p.Name, "contract.") ||
+					p.Name == "order.index" || p.Name == "order.show" ||
+					p.Name == "setting.index"
+			case "Desainer", "Drafter":
+				// Moodboard, Input Item, and basic Order/Setting access
+				shouldAssign = strings.HasPrefix(p.Name, "moodboard.") ||
+					strings.HasPrefix(p.Name, "input_item.") ||
+					p.Name == "order.index" || p.Name == "order.show" ||
+					p.Name == "setting.index"
+			case "Surveyor":
+				// Survey and basic Order/Setting access
+				shouldAssign = strings.HasPrefix(p.Name, "survey.") ||
+					p.Name == "order.index" || p.Name == "order.show" ||
+					p.Name == "setting.index"
+			case "Estimator":
+				// RAB, Input Item reading, and basic Order/Setting access
+				shouldAssign = strings.HasPrefix(p.Name, "rab.") ||
+					p.Name == "input_item.index" || p.Name == "input_item.show" ||
+					p.Name == "order.index" || p.Name == "order.show" ||
+					p.Name == "setting.index"
+			case "Customer Service":
+				// Order (create/read), Survey (create/read)
+				shouldAssign = p.Name == "order.index" || p.Name == "order.show" || p.Name == "order.create" || p.Name == "order.update" ||
+					p.Name == "survey.index" || p.Name == "survey.show" || p.Name == "survey.create" || p.Name == "survey.update" ||
+					p.Name == "setting.index"
+			case "Kepala Marketing":
+				// CS access plus marketing response overrides
+				shouldAssign = p.Name == "order.index" || p.Name == "order.show" || p.Name == "order.create" || p.Name == "order.update" ||
+					p.Name == "survey.index" || p.Name == "survey.show" || p.Name == "survey.create" || p.Name == "survey.update" ||
+					p.Name == "survey.marketing_response" || p.Name == "moodboard.marketing_response" ||
+					p.Name == "setting.index"
+			case "Supervisor", "Project Manager":
+				// Workplan, Survey Ulang, Project Management
+				shouldAssign = strings.HasPrefix(p.Name, "workplan.") ||
+					p.Name == "order.index" || p.Name == "order.show" ||
+					p.Name == "survey.index" || p.Name == "survey.show" ||
+					p.Name == "setting.index"
+			}
+
+			if shouldAssign {
+				var rp entity.RolePermission
+				err := db.Where("role_id = ? AND permission_id = ?", r.ID, p.ID).FirstOrCreate(&rp, entity.RolePermission{
+					RoleID:       r.ID,
+					PermissionID: p.ID,
+				}).Error
+				if err == nil {
+					count++
+				}
 			}
 		}
 	}
-	logger.Info("Synchronized administrator permissions", zap.Int("roles_processed", len(roles)), zap.Int("total_permissions_mapped", count))
+	logger.Info("Synchronized default role permissions", zap.Int("roles_processed", len(roles)), zap.Int("total_permissions_mapped", count))
 }
 
 // SeedAdminUser creates a default division, superadmin role, and the first admin user.
