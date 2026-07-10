@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/claudio-nehemia/interior_backend/internal/database"
@@ -75,14 +76,16 @@ func (s *companyService) Update(ctx context.Context, id uint, req dto.CompanyUpd
 	company.Email = req.Email
 	company.Phone = req.Phone
 
-	if req.ExpiredAt != nil && *req.ExpiredAt != "" {
-		t, err := time.Parse("2006-01-02", *req.ExpiredAt)
-		if err != nil {
-			return nil, fmt.Errorf("format tanggal expired_at salah")
+	if req.ExpiredAt != nil {
+		if *req.ExpiredAt != "" {
+			t, err := time.Parse("2006-01-02", *req.ExpiredAt)
+			if err != nil {
+				return nil, fmt.Errorf("format tanggal expired_at salah")
+			}
+			company.ExpiredAt = &t
+		} else {
+			company.ExpiredAt = nil
 		}
-		company.ExpiredAt = &t
-	} else {
-		company.ExpiredAt = nil
 	}
 
 	if err := s.db.WithContext(ctx).Save(&company).Error; err != nil {
@@ -108,6 +111,19 @@ func (s *companyService) Verify(ctx context.Context, id uint) error {
 		}
 
 		company.Status = "verified"
+
+		// Recalculate expired_at to start from the moment of approval (verification)
+		var val string
+		tx.Table("settings").Where("company_id = ? AND key = ?", 1, "default_active_days").Pluck("value", &val)
+		days := 4 // Default fallback
+		if val != "" {
+			if parsedDays, err := strconv.Atoi(val); err == nil {
+				days = parsedDays
+			}
+		}
+		expiredAt := time.Now().AddDate(0, 0, days)
+		company.ExpiredAt = &expiredAt
+
 		if err := tx.Save(&company).Error; err != nil {
 			return err
 		}
