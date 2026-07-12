@@ -64,6 +64,7 @@ func NewApp() (*App, error) {
 	database.SeedUsers(db, log)
 	database.SeedItems(db, log)
 	database.SeedWorkplanStages(db, log)
+	database.SyncAllRolePermissions(db, log)
 	database.SyncPostgresSequences(db, log)
 
 	// Flush role permission and settings cache so newly-seeded data takes effect immediately
