@@ -42,3 +42,42 @@ func RequirePermission(authSvc service.AuthService, permission string) gin.Handl
 		c.Abort()
 	}
 }
+
+// RequireAnyPermission checks if the current user's role has at least one of the specified permissions.
+func RequireAnyPermission(authSvc service.AuthService, permissions ...string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		roleIDVal, exists := c.Get("role_id")
+		if !exists {
+			helper.Forbidden(c, "Akses ditolak: role tidak ditemukan")
+			c.Abort()
+			return
+		}
+
+		roleID, ok := roleIDVal.(uint)
+		if !ok || roleID == 0 {
+			helper.Forbidden(c, "Akses ditolak: role tidak valid")
+			c.Abort()
+			return
+		}
+
+		perms, err := authSvc.GetPermissionsByRoleID(c.Request.Context(), roleID)
+		if err != nil {
+			helper.InternalError(c, "Gagal memuat permissions")
+			c.Abort()
+			return
+		}
+
+		for _, p := range perms {
+			for _, allowed := range permissions {
+				if p == allowed {
+					c.Next()
+					return
+				}
+			}
+		}
+
+		helper.Forbidden(c, "Akses ditolak: anda tidak memiliki hak akses yang diperlukan")
+		c.Abort()
+	}
+}
+

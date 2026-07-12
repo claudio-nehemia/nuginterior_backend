@@ -357,30 +357,23 @@ func (s *contractService) GenerateContractPDF(ctx context.Context, id uint) ([]b
 
 	if logoFile != "" {
 		pdf.Image(logoFile, 20, 15, 0, 15, false, "", 0, "")
-		pdf.SetLeftMargin(38)
-		pdf.SetX(38)
-		pdf.SetY(15)
-	} else {
-		pdf.SetY(15)
 	}
-
+	pdf.SetY(15)
 	pdf.SetFont("Arial", "B", 14)
-	pdf.SetTextColor(0, 128, 128) // Teal
-	pdf.CellFormat(0, 7, cp.Name, "", 1, "L", false, 0, "")
-	pdf.SetFont("Arial", "", 8.5)
-	pdf.SetTextColor(100, 100, 100)
-	pdf.CellFormat(0, 4, "Premium Interior Design & Architecture Services", "", 1, "L", false, 0, "")
-	pdf.CellFormat(0, 4, fmt.Sprintf("Email: %s | Phone: %s", cp.Email, cp.Phone), "", 1, "L", false, 0, "")
+	pdf.SetTextColor(0, 0, 0)
+	pdf.CellFormat(0, 7, cp.Name, "", 1, "C", false, 0, "")
 
-	// Reset margins
+	pdf.SetFont("Arial", "", 8.5)
+	pdf.SetTextColor(80, 80, 80)
+	pdf.CellFormat(0, 4, "Premium Interior Design & Architecture Services", "", 1, "C", false, 0, "")
+	pdf.CellFormat(0, 4, fmt.Sprintf("Email: %s | Phone: %s", cp.Email, cp.Phone), "", 1, "C", false, 0, "")
+
 	pdf.SetLeftMargin(20)
 	pdf.SetX(20)
 	pdf.SetY(32)
-
-	// Underline header
-	pdf.SetDrawColor(0, 128, 128)
+	pdf.SetDrawColor(0, 0, 0)
 	pdf.SetLineWidth(0.8)
-	pdf.Line(20, pdf.GetY(), 190, pdf.GetY()) // Margins are 20, so printable width is 210 - 40 = 170mm (from 20 to 190)
+	pdf.Line(20, pdf.GetY(), 190, pdf.GetY())
 	pdf.Ln(6)
 
 	// 2. Title

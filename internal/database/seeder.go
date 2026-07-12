@@ -54,9 +54,16 @@ func SyncAllRolePermissions(db *gorm.DB, logger *zap.Logger) {
 			shouldAssign := false
 
 			switch r.NamaRole {
-			case "Admin", "Owner", "Super Admin":
+			case "Admin", "Owner":
 				// Admin & Owner get everything
 				shouldAssign = true
+			case "Super Admin":
+				// Super Admin only gets role, user, company, divisi, and permissions list
+				shouldAssign = strings.HasPrefix(p.Name, "role.") ||
+					strings.HasPrefix(p.Name, "user.") ||
+					strings.HasPrefix(p.Name, "company.") ||
+					strings.HasPrefix(p.Name, "divisi.") ||
+					p.Name == "permission.index"
 			case "Legal Admin":
 				// Invoice, Contract, and basic Order/Setting access
 				shouldAssign = strings.HasPrefix(p.Name, "invoice.") ||
@@ -108,6 +115,8 @@ func SyncAllRolePermissions(db *gorm.DB, logger *zap.Logger) {
 				if err == nil {
 					count++
 				}
+			} else {
+				db.Where("role_id = ? AND permission_id = ?", r.ID, p.ID).Delete(&entity.RolePermission{})
 			}
 		}
 	}
@@ -143,15 +152,23 @@ func SeedAdminUser(db *gorm.DB, logger *zap.Logger) {
 		DivisiID:  divisi.ID,
 	})
 
-	// 3. Assign all permissions to Super Admin
+	// 3. Assign specific permissions to Super Admin
 	var perms []entity.Permission
 	db.Find(&perms)
 	
 	for _, p := range perms {
-		db.FirstOrCreate(&entity.RolePermission{}, entity.RolePermission{
-			RoleID:       role.ID,
-			PermissionID: p.ID,
-		})
+		shouldAssign := strings.HasPrefix(p.Name, "role.") ||
+			strings.HasPrefix(p.Name, "user.") ||
+			strings.HasPrefix(p.Name, "company.") ||
+			strings.HasPrefix(p.Name, "divisi.") ||
+			p.Name == "permission.index"
+
+		if shouldAssign {
+			db.FirstOrCreate(&entity.RolePermission{}, entity.RolePermission{
+				RoleID:       role.ID,
+				PermissionID: p.ID,
+			})
+		}
 	}
 
 	// 4. Create User

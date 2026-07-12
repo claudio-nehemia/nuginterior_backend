@@ -82,7 +82,7 @@ func Register(router *gin.Engine, services *service.Services, cfg *config.Config
 		// PRODUK
 		produk := protected.Group("/produk")
 		{
-			produk.GET("", middleware.RequirePermission(services.Auth, constants.PermProdukIndex), handlers.Produk.Index)
+			produk.GET("", middleware.RequireAnyPermission(services.Auth, constants.PermProdukIndex, constants.PermRABIndex, constants.PermRABCreate, constants.PermRABUpdate), handlers.Produk.Index)
 			produk.POST("", middleware.RequirePermission(services.Auth, constants.PermProdukCreate), handlers.Produk.Store)
 			produk.PUT("/:id", middleware.RequirePermission(services.Auth, constants.PermProdukUpdate), handlers.Produk.Update)
 			produk.DELETE("/:id", middleware.RequirePermission(services.Auth, constants.PermProdukDelete), handlers.Produk.Destroy)
@@ -92,7 +92,7 @@ func Register(router *gin.Engine, services *service.Services, cfg *config.Config
 		// BAHAN BAKU
 		bahanBaku := protected.Group("/bahan-baku")
 		{
-			bahanBaku.GET("", middleware.RequirePermission(services.Auth, constants.PermBahanBakuIndex), handlers.BahanBaku.Index)
+			bahanBaku.GET("", middleware.RequireAnyPermission(services.Auth, constants.PermBahanBakuIndex, constants.PermProdukIndex, constants.PermProdukCreate, constants.PermProdukUpdate), handlers.BahanBaku.Index)
 			bahanBaku.POST("", middleware.RequirePermission(services.Auth, constants.PermBahanBakuCreate), handlers.BahanBaku.Store)
 			bahanBaku.PUT("/:id", middleware.RequirePermission(services.Auth, constants.PermBahanBakuUpdate), handlers.BahanBaku.Update)
 			bahanBaku.DELETE("/:id", middleware.RequirePermission(services.Auth, constants.PermBahanBakuDelete), handlers.BahanBaku.Destroy)
@@ -101,7 +101,7 @@ func Register(router *gin.Engine, services *service.Services, cfg *config.Config
 		// ITEMS
 		items := protected.Group("/items")
 		{
-			items.GET("", middleware.RequirePermission(services.Auth, constants.PermItemIndex), handlers.Item.Index)
+			items.GET("", middleware.RequireAnyPermission(services.Auth, constants.PermItemIndex, constants.PermRABIndex, constants.PermRABCreate, constants.PermRABUpdate), handlers.Item.Index)
 			items.POST("", middleware.RequirePermission(services.Auth, constants.PermItemCreate), handlers.Item.Store)
 			items.PUT("/:id", middleware.RequirePermission(services.Auth, constants.PermItemUpdate), handlers.Item.Update)
 			items.DELETE("/:id", middleware.RequirePermission(services.Auth, constants.PermItemDelete), handlers.Item.Destroy)
@@ -255,8 +255,8 @@ func Register(router *gin.Engine, services *service.Services, cfg *config.Config
 		// INPUT ITEMS
 		inputItems := protected.Group("/input-items")
 		{
-			inputItems.GET("", middleware.RequirePermission(services.Auth, constants.PermInputItemIndex), handlers.InputItem.Index)
-			inputItems.GET("/:id", middleware.RequirePermission(services.Auth, constants.PermInputItemShow), handlers.InputItem.Show)
+			inputItems.GET("", middleware.RequireAnyPermission(services.Auth, constants.PermInputItemIndex, constants.PermRABIndex, constants.PermRABCreate, constants.PermRABUpdate), handlers.InputItem.Index)
+			inputItems.GET("/:id", middleware.RequireAnyPermission(services.Auth, constants.PermInputItemShow, constants.PermInputItemIndex, constants.PermRABCreate, constants.PermRABUpdate, constants.PermRABIndex), handlers.InputItem.Show)
 			inputItems.GET("/desain-final/:df_id", middleware.RequirePermission(services.Auth, constants.PermInputItemShow), handlers.InputItem.ShowByDesainFinal)
 			inputItems.POST("", middleware.RequirePermission(services.Auth, constants.PermInputItemCreate), handlers.InputItem.Store)
 			inputItems.PUT("/:id", middleware.RequirePermission(services.Auth, constants.PermInputItemUpdate), handlers.InputItem.Update)

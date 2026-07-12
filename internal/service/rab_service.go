@@ -248,9 +248,9 @@ func (s *rabService) Update(ctx context.Context, id uint, req dto.UpdateRABReque
 		return nil, errors.New("RAB tidak ditemukan")
 	}
 
-	if rab.Status == "submitted" {
-		return nil, errors.New("tidak dapat memperbarui RAB yang sudah disubmit")
-	}
+	// if rab.Status == "submitted" {
+	// 	return nil, errors.New("tidak dapat memperbarui RAB yang sudah disubmit")
+	// }
 
 	rab.MarkupGeneral = req.MarkupGeneral
 	rab.Rooms = nil // Clear child associations to reconstruct
@@ -723,30 +723,23 @@ func (s *rabService) ExportPDF(ctx context.Context, id uint, mode string) ([]byt
 
 	if logoFile != "" {
 		pdf.Image(logoFile, 15, 12, 0, 15, false, "", 0, "")
-		pdf.SetLeftMargin(33)
-		pdf.SetX(33)
-		pdf.SetY(12)
-	} else {
-		pdf.SetY(12)
 	}
-
+	pdf.SetY(12)
 	pdf.SetFont("Arial", "B", 16)
-	pdf.SetTextColor(0, 128, 128) // Teal Primary Color
-	pdf.CellFormat(0, 7, cp.Name, "", 1, "L", false, 0, "")
+	pdf.SetTextColor(0, 0, 0)
+	pdf.CellFormat(0, 7, cp.Name, "", 1, "C", false, 0, "")
 
 	pdf.SetFont("Arial", "", 8.5)
-	pdf.SetTextColor(100, 100, 100)
-	pdf.CellFormat(0, 4, "Premium Interior Design & Architecture Services", "", 1, "L", false, 0, "")
-	pdf.CellFormat(0, 4, fmt.Sprintf("Email: %s | Phone: %s", cp.Email, cp.Phone), "", 1, "L", false, 0, "")
+	pdf.SetTextColor(80, 80, 80)
+	pdf.CellFormat(0, 4, "Premium Interior Design & Architecture Services", "", 1, "C", false, 0, "")
+	pdf.CellFormat(0, 4, fmt.Sprintf("Email: %s | Phone: %s", cp.Email, cp.Phone), "", 1, "C", false, 0, "")
 
-	// Reset margins
 	pdf.SetLeftMargin(15)
 	pdf.SetX(15)
 	pdf.SetY(30)
-
-	pdf.SetDrawColor(0, 128, 128)
+	pdf.SetDrawColor(0, 0, 0)
 	pdf.SetLineWidth(0.8)
-	pdf.Line(15, pdf.GetY(), 282, pdf.GetY()) // 15 + 267 = 282
+	pdf.Line(15, pdf.GetY(), 282, pdf.GetY())
 	pdf.Ln(6)
 
 	// Document Title & Mode
